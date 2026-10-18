@@ -1,0 +1,183 @@
+
+<section class="procesos-container">
+
+  
+<header class="encabezado">
+
+  <div class="encabezado-contenido">
+
+    <div>
+      <h1>Gestión de Procesos</h1>
+      <p>Consulta y administra los procesos empresariales.</p>
+    </div>
+
+    <button
+      type="button"
+      class="btn-logout"
+      (click)="cerrarSesion()"
+      [disabled]="cerrandoSesion()"
+    >
+      @if (cerrandoSesion()) {
+        Cerrando sesión...
+      } @else {
+        Cerrar sesión
+      }
+    </button>
+
+  </div>
+
+  @if (errorLogout()) {
+    <p class="mensaje-error" role="alert">
+      {{ errorLogout() }}
+    </p>
+  }
+
+</header>
+
+
+  <!-- Formulario de busqueda -->
+  <form
+    class="filtros"
+    [formGroup]="filtros"
+    (ngSubmit)="buscar()"
+  >
+
+    <div class="campo">
+      <label for="nombre">Nombre del proceso</label>
+      <input
+        id="nombre"
+        type="text"
+        formControlName="nombre"
+        placeholder="Buscar por nombre"
+      />
+    </div>
+
+    <div class="campo">
+      <label for="estado">Estado</label>
+      <select id="estado" formControlName="estado">
+        <option value="">Todos</option>
+        <option value="BORRADOR">Borrador</option>
+        <option value="PUBLICADO">Publicado</option>
+      </select>
+    </div>
+
+    <div class="campo">
+      <label for="categoria">Categoría</label>
+      <input
+        id="categoria"
+        type="text"
+        formControlName="categoria"
+        placeholder="Buscar categoría"
+      />
+    </div>
+
+    <div class="campo-check">
+      <label>
+        <input
+          type="checkbox"
+          formControlName="incluirInactivos"
+        />
+        Incluir procesos inactivos
+      </label>
+    </div>
+
+    <button
+      class="btn-buscar"
+      type="submit"
+      [disabled]="cargando()"
+    >
+      Buscar procesos
+    </button>
+
+  </form>
+
+  <!-- Estados de la consulta -->
+  @if (cargando()) {
+    <p class="mensaje" role="status">
+      Cargando procesos...
+    </p>
+  } @else if (error()) {
+    <div class="mensaje-error" role="alert">
+      <p>{{ error() }}</p>
+      <button type="button" (click)="cargarProcesos()">
+        Reintentar
+      </button>
+    </div>
+  } @else if (procesos().length === 0) {
+    <p class="mensaje">
+      No se encontraron procesos.
+    </p>
+  } @else {
+
+    <p class="total">
+      Total de procesos: {{ totalElementos() }}
+    </p>
+
+    <!-- Tabla de procesos -->
+    <div class="tabla-contenedor">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Categoría</th>
+            <th>Estado</th>
+            <th>Activo</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          @for (proceso of procesos(); track proceso.id) {
+            <tr>
+              <td>{{ proceso.id }}</td>
+              <td>{{ proceso.nombre }}</td>
+              <td>{{ proceso.categoria }}</td>
+
+              <td>
+                <span class="estado">
+                  {{ proceso.estado }}
+                </span>
+              </td>
+
+              <td>
+                @if (proceso.activo) {
+                  <span class="activo">Sí</span>
+                } @else {
+                  <span class="inactivo">No</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Paginación -->
+    <nav class="paginacion" aria-label="Páginas de procesos">
+
+      <button
+        type="button"
+        (click)="paginaAnterior()"
+        [disabled]="pagina() === 0"
+      >
+        Anterior
+      </button>
+
+      <span>
+        Página {{ pagina() + 1 }}
+        de {{ totalPaginas() }}
+      </span>
+
+      <button
+        type="button"
+        (click)="paginaSiguiente()"
+        [disabled]="pagina() + 1 >= totalPaginas()"
+      >
+        Siguiente
+      </button>
+
+    </nav>
+  }
+
+</section>
+
