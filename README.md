@@ -1,59 +1,48 @@
-# Frontend
+# Frontend Angular
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.2.2.
+Interfaz del editor de procesos empresariales. Las peticiones usan `/api` y la cookie de sesión del servidor.
 
-## Development server
-
-To start a local development server, run:
+## Ejecutar
 
 ```bash
-ng serve
+npm ci
+npm start -- --proxy-config proxy.conf.json
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Abre http://localhost:4200. El proxy dirige las peticiones al backend en http://localhost:8080.
 
-## Code scaffolding
+## Pantallas disponibles
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+| Ruta | Función | Acceso |
+| --- | --- | --- |
+| `/login` | Iniciar sesión con correo y contraseña. | Público |
+| `/procesos` | Buscar, filtrar y paginar procesos; confirmar su eliminación lógica. | Usuarios autenticados; solo el administrador elimina. |
+| `/usuarios` | Registrar colaboradores, cambiar roles y desactivar cuentas. | Administrador |
+| `/procesos/nuevo` | Crear un proceso con nombre, descripción y categoría. | Administrador y editor |
+| `/procesos/:id/editar` | Cargar y modificar los datos y el estado de un proceso. | Administrador y editor |
+
+Crear y editar comparten un mismo componente. Al crear, la API asigna el estado `BORRADOR`. Los procesos inactivos se pueden listar, pero no editar.
+
+## Explicación sencilla del código
+
+- `models`: describe los datos que intercambiamos con el servidor.
+- `services`: envía las peticiones HTTP con la cookie de sesión.
+- `guards`: controla qué rutas puede visitar cada rol; el servidor valida los permisos reales.
+- `pages`: contiene la lógica, los formularios y las tablas de cada pantalla.
+- `shared/error-api.ts`: convierte los errores de la API en mensajes legibles.
+- `shared/gestion.css`: comparte el estilo entre los formularios nuevos.
+
+El listado enlaza a usuarios y a crear o editar procesos. Los formularios revisan los campos antes de enviarlos y conservan la información si el servidor devuelve un error. La eliminación de procesos y la desactivación de usuarios requieren confirmación en pantalla.
+
+El rol y la empresa obtenidos en el login se conservan en `sessionStorage` para mantener la navegación al recargar. No se guardan contraseñas. Si ya había una sesión abierta antes de esta actualización, inicia sesión nuevamente para cargar esos datos. No existe un endpoint de consulta de sesión en la API actual.
+
+Los cambios de rol se aplican en el siguiente inicio de sesión del colaborador, porque el backend conserva el rol en la sesión. La pantalla evita modificar la propia cuenta administrativa.
+
+## Verificación
 
 ```bash
-ng generate component component-name
+npm run build
+npm test -- --watch=false
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Las pruebas usan respuestas HTTP simuladas para comprobar formularios, permisos de navegación, filtros, creación, edición, eliminación y gestión de usuarios. La integración con un servidor real requiere iniciar el backend y entrar con una cuenta de prueba.

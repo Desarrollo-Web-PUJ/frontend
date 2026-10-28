@@ -1,0 +1,52 @@
+<section class="gestion">
+  <nav class="navegacion" aria-label="Navegación de procesos">
+    <a routerLink="/procesos">← Volver a procesos</a>
+  </nav>
+  <header>
+    <h1>{{ id ? 'Editar proceso' : 'Crear proceso' }}</h1>
+    <p>Completa la información general del proceso de tu empresa.</p>
+  </header>
+  @if (cargando()) {
+    <p role="status">Cargando datos del proceso...</p>
+  }
+  @if (errorCarga()) {
+    <div class="error" role="alert">
+      <p>{{ errorCarga() }}</p>
+      <button type="button" (click)="cargar()" [disabled]="cargando()">Reintentar</button>
+      <a routerLink="/login">Ir al inicio de sesión</a>
+    </div>
+  }
+  @if (disponible() && !cargando()) {
+    <form class="tarjeta" [formGroup]="form" (ngSubmit)="guardar()">
+      <fieldset [disabled]="guardando()">
+        <legend>Datos del proceso</legend>
+        <label for="nombre">Nombre *</label>
+        <input id="nombre" formControlName="nombre" required aria-describedby="nombre-error" />
+        @if (form.controls.nombre.touched && form.controls.nombre.invalid) {
+          <small id="nombre-error" class="error-campo">Escribe un nombre para el proceso.</small>
+        }
+        <label for="categoria">Categoría *</label>
+        <input id="categoria" formControlName="categoria" required aria-describedby="categoria-error" />
+        @if (form.controls.categoria.touched && form.controls.categoria.invalid) {
+          <small id="categoria-error" class="error-campo">Escribe una categoría.</small>
+        }
+        <label for="descripcion">Descripción</label>
+        <textarea id="descripcion" formControlName="descripcion" rows="5"></textarea>
+        @if (id) {
+          <label for="estado">Estado *</label>
+          <select id="estado" formControlName="estado">
+            <option value="BORRADOR">Borrador</option>
+            <option value="PUBLICADO">Publicado</option>
+          </select>
+        } @else {
+          <p class="ayuda">El proceso se creará como borrador. Después podrás editarlo y cambiar su estado.</p>
+        }
+        <div class="acciones">
+          <button class="primario" type="submit">{{ guardando() ? 'Guardando...' : 'Guardar proceso' }}</button>
+          @if (!guardando()) { <a routerLink="/procesos">Cancelar</a> }
+        </div>
+      </fieldset>
+      @if (error()) { <p class="error" role="alert">{{ error() }} <a routerLink="/login">Ir al inicio de sesión</a></p> }
+    </form>
+  }
+</section>

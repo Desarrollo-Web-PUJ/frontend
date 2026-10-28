@@ -31,3 +31,17 @@ export interface Page<T> {
   last: boolean;
 }
 
+
+// Crear siempre genera un borrador; el estado se cambia al editar.
+export interface ProcesoCrearRequest {
+  nombre: string;
+  descripcion: string;
+  categoria: string;
+}
+
+export interface ProcesoEditarRequest extends ProcesoCrearRequest {
+  estado: EstadoProceso;
+}
+
+// El formulario necesita solo los datos generales del detalle.
+export type ProcesoDetalle = Omit<ProcesoResponse, 'empresaId'>;
