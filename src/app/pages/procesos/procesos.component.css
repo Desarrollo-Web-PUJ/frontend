@@ -276,3 +276,11 @@ tbody tr:hover {
     width: 100%;
   }
 }
+
+.acciones { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; margin-bottom: 20px; }
+td .acciones { margin: 0; }
+a { color: #4338ca; }
+.enlace-primario { background: #4f46e5; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; }
+.mensaje-exito { padding: 20px; border-radius: 12px; color: #166534; background: #f0fdf4; }
+.confirmacion { padding: 20px; border-radius: 12px; background: #fff7ed; margin-bottom: 20px; }
+:focus-visible { outline: 3px solid #818cf8; outline-offset: 3px; }

@@ -2,13 +2,15 @@
 
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import {
   FormControl,
   FormGroup,
   ReactiveFormsModule
 } from '@angular/forms';
+
+import { mensajeApi } from '../../shared/error-api';
 
 import { ProcesoService } from '../../services/proceso.service';
 import { AuthService } from '../../services/auth.service';
@@ -20,15 +22,20 @@ import type {
 
 @Component({
   selector: 'app-procesos',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './procesos.component.html',
   styleUrl: './procesos.component.css'
 })
 export class Procesos implements OnInit {
 
   private readonly procesoService = inject(ProcesoService);
-  private readonly authService = inject(AuthService);
+  readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+
+  readonly mensaje = signal('');
+  readonly errorAccion = signal('');
+  readonly pendiente = signal<ProcesoListItem | null>(null);
+  readonly eliminando = signal(false);
 
   readonly procesos = signal<ProcesoListItem[]>([]);
 
@@ -61,6 +68,10 @@ export class Procesos implements OnInit {
   });
 
   ngOnInit(): void {
+    // El formulario envía este mensaje al volver después de guardar.
+    const mensaje = this.router.currentNavigation()?.extras.state?.['mensaje'] ?? history.state?.mensaje;
+    if (typeof mensaje === 'string') this.mensaje.set(mensaje);
+    history.replaceState({ ...history.state, mensaje: undefined }, '');
     this.cargarProcesos();
   }
 
@@ -107,22 +118,53 @@ export class Procesos implements OnInit {
   }
 
   buscar(): void {
+    if (this.cargando()) return;
     this.pagina.set(0);
     this.cargarProcesos();
   }
 
   paginaAnterior(): void {
-    if (this.pagina() > 0) {
+    if (!this.cargando() && this.pagina() > 0) {
       this.pagina.update(valor => valor - 1);
       this.cargarProcesos();
     }
   }
 
   paginaSiguiente(): void {
-    if (this.pagina() + 1 < this.totalPaginas()) {
+    if (!this.cargando() && this.pagina() + 1 < this.totalPaginas()) {
       this.pagina.update(valor => valor + 1);
       this.cargarProcesos();
     }
+  }
+
+  limpiarFiltros(): void {
+    if (this.cargando()) return;
+    this.filtros.reset({ nombre: '', estado: '', categoria: '', incluirInactivos: false });
+    this.buscar();
+  }
+
+  eliminar(): void {
+    const proceso = this.pendiente();
+    if (!proceso || this.eliminando() || this.cargando() || !this.authService.esAdministrador()) return;
+    this.eliminando.set(true);
+    this.errorAccion.set('');
+    this.mensaje.set('');
+    this.procesoService.eliminar(proceso.id).subscribe({
+      next: () => {
+        this.eliminando.set(false);
+        this.pendiente.set(null);
+        this.mensaje.set('Proceso desactivado correctamente. Puedes consultarlo incluyendo los inactivos.');
+        // Si se retira el último elemento, regresamos a una página con resultados.
+        if (!this.filtros.controls.incluirInactivos.value && this.procesos().length === 1 && this.pagina() > 0) {
+          this.pagina.update(pagina => pagina - 1);
+        }
+        this.cargarProcesos();
+      },
+      error: error => {
+        this.eliminando.set(false);
+        this.errorAccion.set(mensajeApi(error));
+      }
+    });
   }
 
   cerrarSesion(): void {

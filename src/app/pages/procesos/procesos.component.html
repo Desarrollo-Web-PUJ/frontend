@@ -35,6 +35,25 @@
 </header>
 
 
+  <nav class="acciones" aria-label="Gestión de la empresa">
+    @if (authService.esAdministrador()) { <a routerLink="/usuarios">Gestionar usuarios</a> }
+    @if (authService.puedeEditar()) { <a class="enlace-primario" routerLink="/procesos/nuevo">Crear proceso</a> }
+  </nav>
+  @if (!authService.usuario()) {
+    <p class="mensaje">Inicia sesión nuevamente para cargar tu rol y habilitar las acciones correspondientes. <a routerLink="/login">Iniciar sesión</a></p>
+  }
+  @if (mensaje()) { <p class="mensaje-exito" role="status">{{ mensaje() }}</p> }
+  @if (errorAccion()) { <p class="mensaje-error" role="alert">{{ errorAccion() }}</p> }
+  @if (pendiente(); as proceso) {
+    <section class="confirmacion" aria-label="Confirmar eliminación">
+      <p>¿Eliminar el proceso <strong>{{ proceso.nombre }}</strong>? Quedará inactivo y conservará su historial.</p>
+      <div class="acciones">
+        <button class="btn-logout" type="button" (click)="eliminar()" [disabled]="eliminando() || cargando()">{{ eliminando() ? 'Eliminando...' : 'Confirmar eliminación' }}</button>
+        <button type="button" (click)="pendiente.set(null)" [disabled]="eliminando()">Cancelar</button>
+      </div>
+    </section>
+  }
+
   <!-- Formulario de busqueda -->
   <form
     class="filtros"
@@ -88,6 +107,7 @@
     >
       Buscar procesos
     </button>
+    <button type="button" (click)="limpiarFiltros()" [disabled]="cargando()">Limpiar filtros</button>
 
   </form>
 
@@ -123,6 +143,7 @@
             <th>Categoría</th>
             <th>Estado</th>
             <th>Activo</th>
+            <th>Acciones</th>
           </tr>
         </thead>
 
@@ -146,6 +167,16 @@
                   <span class="inactivo">No</span>
                 }
               </td>
+              <td>
+                @if (proceso.activo && authService.puedeEditar()) {
+                  <div class="acciones">
+                    <a [routerLink]="['/procesos', proceso.id, 'editar']">Editar</a>
+                    @if (authService.esAdministrador()) {
+                      <button class="btn-logout" type="button" (click)="pendiente.set(proceso)" [disabled]="eliminando()">Eliminar</button>
+                    }
+                  </div>
+                } @else { <span>Solo consulta</span> }
+              </td>
             </tr>
           }
         </tbody>
@@ -158,7 +189,7 @@
       <button
         type="button"
         (click)="paginaAnterior()"
-        [disabled]="pagina() === 0"
+        [disabled]="cargando() || pagina() === 0"
       >
         Anterior
       </button>
@@ -171,7 +202,7 @@
       <button
         type="button"
         (click)="paginaSiguiente()"
-        [disabled]="pagina() + 1 >= totalPaginas()"
+        [disabled]="cargando() || pagina() + 1 >= totalPaginas()"
       >
         Siguiente
       </button>
