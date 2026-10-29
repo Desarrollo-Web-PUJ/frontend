@@ -1,0 +1,45 @@
+.cabecera-listado {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.busqueda {
+  display: flex;
+  gap: 8px;
+}
+
+.busqueda input {
+  min-width: 220px;
+}
+
+.usos {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.suave {
+  color: var(--color-texto-suave);
+}
+
+.etiqueta {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--color-exito-suave);
+  color: var(--color-exito);
+}
+
+.etiqueta.en-uso {
+  background: var(--color-advertencia-suave);
+  color: var(--color-advertencia);
+}
+
+td .acciones {
+  margin: 0;
+}

@@ -1,0 +1,9 @@
+<nav class="paginacion" [attr.aria-label]="etiqueta()">
+  <button type="button" (click)="anterior()" [disabled]="deshabilitado() || !hayAnterior()">
+    Anterior
+  </button>
+  <span>Página {{ pagina() + 1 }} de {{ totalPaginas() || 1 }}</span>
+  <button type="button" (click)="siguiente()" [disabled]="deshabilitado() || !haySiguiente()">
+    Siguiente
+  </button>
+</nav>

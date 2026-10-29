@@ -1,12 +1,22 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
+
+import type { RolUsuario } from '../models/auth.model';
 import { AuthService } from '../services/auth.service';
 
-// Esto organiza la navegación; el servidor vuelve a comprobar los permisos.
+/**
+ * Restringe una ruta a ciertos roles de acceso (data.roles).
+ * Solo organiza la navegación: el servidor vuelve a comprobar cada permiso.
+ */
 export const rolGuard: CanActivateFn = route => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  if (!auth.usuario()) return router.createUrlTree(['/login']);
-  return route.data['roles'].includes(auth.usuario()!.rol)
-    ? true : router.createUrlTree(['/procesos']);
+  const usuario = auth.usuario();
+
+  if (!usuario) {
+    return router.createUrlTree(['/login']);
+  }
+
+  const rolesPermitidos = (route.data['roles'] ?? []) as RolUsuario[];
+  return rolesPermitidos.includes(usuario.rol) ? true : router.createUrlTree(['/procesos']);
 };

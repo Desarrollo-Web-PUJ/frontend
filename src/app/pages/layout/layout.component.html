@@ -1,0 +1,32 @@
+<header class="barra">
+  <div class="barra-contenido">
+    <a class="marca" routerLink="/procesos">Editor de Procesos</a>
+
+    <nav class="menu" aria-label="Navegación principal">
+      <a routerLink="/procesos" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: false }">Procesos</a>
+      <a routerLink="/compartidos" routerLinkActive="activo">Compartidos conmigo</a>
+      <a routerLink="/roles" routerLinkActive="activo">Roles de proceso</a>
+      @if (auth.esAdministrador()) {
+        <a routerLink="/usuarios" routerLinkActive="activo">Usuarios</a>
+      }
+    </nav>
+
+    @if (auth.usuario(); as usuario) {
+      <div class="usuario">
+        <span class="nombre">{{ usuario.nombre }}</span>
+        <span class="detalle">{{ nombreRol() }} · Empresa #{{ usuario.empresaId }}</span>
+      </div>
+    }
+
+    <button type="button" class="salir" (click)="cerrarSesion()" [disabled]="cerrandoSesion()">
+      {{ cerrandoSesion() ? 'Cerrando sesión...' : 'Cerrar sesión' }}
+    </button>
+  </div>
+  @if (errorLogout()) {
+    <p class="error-logout" role="alert">{{ errorLogout() }}</p>
+  }
+</header>
+
+<main>
+  <router-outlet />
+</main>

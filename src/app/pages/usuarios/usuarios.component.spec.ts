@@ -1,8 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter } from '@angular/router';
+import { HttpTestingController } from '@angular/common/http/testing';
 import { Usuarios } from './usuarios.component';
+import { proveedoresPrueba } from '../../testing/proveedores-prueba';
 
 const colaborador = { id: 8, empresaId: 2, nombre: 'Luis', correo: 'luis@empresa.com', rol: 'LECTURA' as const, activo: true };
 
@@ -11,7 +10,7 @@ describe('Usuarios de la empresa', () => {
   let http: HttpTestingController;
   beforeEach(() => {
     sessionStorage.setItem('usuarioActual', JSON.stringify({ usuarioId: 1, empresaId: 2, rol: 'ADMINISTRADOR' }));
-    TestBed.configureTestingModule({ imports: [Usuarios], providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])] });
+    TestBed.configureTestingModule({ imports: [Usuarios], providers: proveedoresPrueba() });
     const fixture = TestBed.createComponent(Usuarios);
     component = fixture.componentInstance;
     http = TestBed.inject(HttpTestingController);

@@ -1,0 +1,21 @@
+@if (lista().length) {
+  <div [class]="'aviso ' + tipo()" [attr.role]="rol()">
+    <div class="contenido">
+      @if (titulo()) {
+        <strong>{{ titulo() }}</strong>
+      }
+      @if (lista().length === 1) {
+        <p>{{ lista()[0] }}</p>
+      } @else {
+        <ul>
+          @for (texto of lista(); track $index) {
+            <li>{{ texto }}</li>
+          }
+        </ul>
+      }
+    </div>
+    @if (descartable()) {
+      <button type="button" class="cerrar" (click)="descartar.emit()" aria-label="Cerrar aviso">×</button>
+    }
+  </div>
+}

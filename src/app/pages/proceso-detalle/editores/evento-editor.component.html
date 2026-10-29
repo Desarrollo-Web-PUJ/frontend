@@ -1,0 +1,129 @@
+<form class="editor" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+  <h3>{{ evento() ? 'Evento: ' + evento()!.nombreMensaje : 'Nuevo evento de mensaje' }}</h3>
+  <p class="ayuda">
+    El sistema modela el mensaje, no lo envía: se documenta su contenido, su destino y su correlación.
+  </p>
+
+  <fieldset [disabled]="guardando() || soloLectura()">
+    <label for="evento-tipo">Tipo *</label>
+    <select id="evento-tipo" formControlName="tipo">
+      @for (tipo of tipos; track tipo[0]) {
+        <option [value]="tipo[0]">{{ tipo[1] }}</option>
+      }
+    </select>
+
+    <label for="evento-pool">Pool *</label>
+    <select id="evento-pool" formControlName="poolId">
+      @for (pool of poolsPropios(); track pool.id) {
+        <option [ngValue]="pool.id">{{ pool.nombre }}</option>
+      }
+    </select>
+
+    <label for="evento-lane">Lane</label>
+    <select id="evento-lane" formControlName="laneId">
+      <option [ngValue]="null">Sin lane (a nivel del pool)</option>
+      @for (lane of lanesDelPool(); track lane.id) {
+        <option [ngValue]="lane.id">{{ lane.nombre }}</option>
+      }
+    </select>
+
+    <label for="evento-nombre">Nombre del mensaje *</label>
+    <input id="evento-nombre" formControlName="nombreMensaje" placeholder="Ej.: NotificarAprobación" />
+    @if (form.controls.nombreMensaje.touched && form.controls.nombreMensaje.invalid) {
+      <small class="error-campo">El nombre del mensaje es obligatorio.</small>
+    }
+
+    <label for="evento-correlacion">Clave de correlación</label>
+    <input id="evento-correlacion" formControlName="claveCorrelacion" placeholder="Ej.: n.º de solicitud" />
+
+    @if (esThrow()) {
+      <div class="grupo">
+        <strong>Envío a un sistema externo (HU-26)</strong>
+        <label for="evento-destino">Tipo de destino externo</label>
+        <select id="evento-destino" formControlName="tipoDestinoExterno">
+          <option [ngValue]="null">No aplica (destino interno)</option>
+          @for (destino of destinosExternos; track destino[0]) {
+            <option [ngValue]="destino[0]">{{ destino[1] }}</option>
+          }
+        </select>
+        <label for="evento-fallo">Si el envío falla</label>
+        <select id="evento-fallo" formControlName="comportamientoFallo">
+          <option [ngValue]="null">No aplica</option>
+          @for (comportamiento of comportamientosFallo; track comportamiento[0]) {
+            <option [ngValue]="comportamiento[0]">{{ comportamiento[1] }}</option>
+          }
+        </select>
+      </div>
+    } @else {
+      <div class="grupo">
+        <strong>Recepción del mensaje (HU-27)</strong>
+        @if (esCatchInicio()) {
+          <label class="en-linea">
+            <input type="checkbox" formControlName="origenExterno" />
+            El mensaje llega desde un sistema externo
+          </label>
+        }
+        <label for="evento-sin-correlacion">Si llega sin correlación</label>
+        <select id="evento-sin-correlacion" formControlName="comportamientoSinCorrelacion">
+          <option [ngValue]="null">No definido</option>
+          @for (comportamiento of comportamientosSinCorrelacion; track comportamiento[0]) {
+            <option [ngValue]="comportamiento[0]">{{ comportamiento[1] }}</option>
+          }
+        </select>
+
+        @if (actividades().length) {
+          <label>Actividades que usan los datos recibidos</label>
+          <div class="lista-opciones">
+            @for (actividad of actividades(); track actividad.id) {
+              <label class="en-linea">
+                <input type="checkbox"
+                       [checked]="consumeActividad(actividad.id)"
+                       (change)="alternarActividad(actividad.id, $any($event.target).checked)" />
+                {{ actividad.nombre }}
+              </label>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <div class="grupo" formArrayName="campos">
+      <strong>Contenido del mensaje</strong>
+      @for (campo of campos.controls; track campo; let i = $index) {
+        <div class="fila" [formGroupName]="i">
+          <input formControlName="nombre" placeholder="Campo" [attr.aria-label]="'Nombre del campo ' + (i + 1)" />
+          <input formControlName="tipoDato" placeholder="Tipo de dato" [attr.aria-label]="'Tipo de dato del campo ' + (i + 1)" />
+          @if (!soloLectura()) {
+            <button class="pequeno" type="button" (click)="quitarCampo(i)" [attr.aria-label]="'Quitar campo ' + (i + 1)">×</button>
+          }
+        </div>
+      }
+      @if (!soloLectura()) {
+        <button class="pequeno" type="button" (click)="agregarCampo()">+ Agregar campo</button>
+      }
+    </div>
+  </fieldset>
+
+  @if (!soloLectura()) {
+    <div class="acciones">
+      <button class="primario" type="submit" [disabled]="guardando()">{{ guardando() ? 'Guardando...' : 'Guardar' }}</button>
+      <button type="button" (click)="cancelado.emit()" [disabled]="guardando()">Cerrar</button>
+      @if (evento()) {
+        <button class="peligro" type="button" (click)="confirmandoEliminacion.set(true)" [disabled]="guardando()">Eliminar evento</button>
+      }
+    </div>
+  }
+
+  @if (confirmandoEliminacion()) {
+    <app-dialogo-confirmacion
+      [mensaje]="'¿Eliminar el evento ' + evento()!.nombreMensaje + '?'"
+      detalle="También se eliminarán sus flujos de mensaje y arcos."
+      textoConfirmar="Eliminar"
+      [ocupado]="guardando()"
+      (confirmar)="eliminar()"
+      (cancelar)="confirmandoEliminacion.set(false)" />
+  }
+  @if (error()) {
+    <app-aviso tipo="error" [mensajes]="error()" />
+  }
+</form>
