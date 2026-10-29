@@ -1,0 +1,12 @@
+<section class="confirmacion" role="alertdialog" aria-labelledby="confirmacion-mensaje">
+  <p id="confirmacion-mensaje" class="mensaje">{{ mensaje() }}</p>
+  @if (detalle()) {
+    <p class="detalle">{{ detalle() }}</p>
+  }
+  <div class="acciones">
+    <button type="button" class="peligro" (click)="confirmar.emit()" [disabled]="ocupado()">
+      {{ ocupado() ? 'Procesando...' : textoConfirmar() }}
+    </button>
+    <button type="button" (click)="cancelar.emit()" [disabled]="ocupado()">Cancelar</button>
+  </div>
+</section>

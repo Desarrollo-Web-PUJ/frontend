@@ -1,0 +1,176 @@
+<section class="detalle-container">
+  <nav class="migas" aria-label="Ruta">
+    <a routerLink="/procesos">← Procesos</a>
+  </nav>
+
+  @if (cargando() && !detalle()) {
+    <p class="tarjeta" role="status">Cargando el diagrama del proceso...</p>
+  } @else if (errorCarga()) {
+    <div class="tarjeta" role="alert">
+      <app-aviso tipo="error" [mensajes]="errorCarga()" />
+      <button type="button" (click)="cargar()">Reintentar</button>
+    </div>
+  } @else if (detalle(); as proceso) {
+
+    <header class="encabezado">
+      <div>
+        <h1>{{ proceso.nombre }}</h1>
+        <p class="meta">
+          <span class="etiqueta">{{ proceso.categoria }}</span>
+          <span class="etiqueta" [class.publicado]="proceso.estado === 'PUBLICADO'">
+            {{ proceso.estado === 'PUBLICADO' ? 'Publicado' : 'Borrador' }}
+          </span>
+          @if (!proceso.activo) { <span class="etiqueta inactivo">Inactivo</span> }
+          @if (!esPropio()) { <span class="etiqueta compartido">Compartido contigo · solo lectura</span> }
+        </p>
+        @if (proceso.descripcion) {
+          <p class="descripcion">{{ proceso.descripcion }}</p>
+        }
+      </div>
+      @if (esPropio() && proceso.activo && auth.puedeEditar()) {
+        <a class="boton-enlace" [routerLink]="['/procesos', proceso.id, 'editar']">Editar datos del proceso</a>
+      }
+    </header>
+
+    <div class="pestanas" role="tablist" aria-label="Secciones del proceso">
+      <button type="button" role="tab" [attr.aria-selected]="pestana() === 'diagrama'"
+              [class.activa]="pestana() === 'diagrama'" (click)="cambiarPestana('diagrama')">Diagrama</button>
+      @if (esPropio()) {
+        <button type="button" role="tab" [attr.aria-selected]="pestana() === 'historial'"
+                [class.activa]="pestana() === 'historial'" (click)="cambiarPestana('historial')">Historial de cambios</button>
+      }
+      @if (esPropio() && auth.esAdministrador() && proceso.activo) {
+        <button type="button" role="tab" [attr.aria-selected]="pestana() === 'compartir'"
+                [class.activa]="pestana() === 'compartir'" (click)="cambiarPestana('compartir')">Compartir</button>
+      }
+    </div>
+
+    @if (mensaje()) {
+      <app-aviso tipo="exito" [mensajes]="mensaje()" [descartable]="true" (descartar)="mensaje.set('')" />
+    }
+    @if (advertencias().length) {
+      <app-aviso tipo="advertencia" titulo="Advertencias de coherencia" [mensajes]="advertencias()"
+                 [descartable]="true" (descartar)="advertencias.set([])" />
+    }
+    @if (errorAccion()) {
+      <app-aviso tipo="error" [mensajes]="errorAccion()" [descartable]="true" (descartar)="errorAccion.set('')" />
+    }
+
+    @switch (pestana()) {
+      @case ('diagrama') {
+        @if (editable()) {
+          <div class="barra-herramientas" role="toolbar" aria-label="Agregar elementos al diagrama">
+            <span>Agregar:</span>
+            @for (elemento of elementosCreables; track elemento.tipo) {
+              <button type="button" [class.activa]="creando() === elemento.tipo" (click)="crear(elemento.tipo)">
+                + {{ elemento.etiqueta }}
+              </button>
+            }
+          </div>
+          <p class="ayuda">Haz clic en un elemento para ver o editar sus datos. Arrastra actividades, gateways y eventos para moverlos.</p>
+        } @else {
+          <p class="ayuda">Haz clic en un elemento para ver su información.</p>
+        }
+
+        <div class="area-trabajo" [class.con-panel]="panelAbierto()">
+          <app-diagrama-proceso
+            [detalle]="proceso"
+            [editable]="editable()"
+            [seleccion]="seleccion()"
+            (seleccionar)="alSeleccionar($event)"
+            (mover)="alMover($event)" />
+
+          @if (panelAbierto()) {
+            <aside class="panel tarjeta" aria-label="Edición del elemento">
+              @switch (creando() ?? seleccion()?.tipo) {
+                @case ('POOL') {
+                  <app-pool-editor [detalle]="proceso" [pool]="poolSeleccionado()" [soloLectura]="!editable()"
+                                   (guardado)="alGuardar($event)" (cancelado)="cerrarPanel()" />
+                }
+                @case ('LANE') {
+                  <app-lane-editor [detalle]="proceso" [lane]="laneSeleccionada()" [soloLectura]="!editable()"
+                                   (guardado)="alGuardar($event)" (cancelado)="cerrarPanel()" />
+                }
+                @case ('ACTIVIDAD') {
+                  <app-actividad-editor [detalle]="proceso" [actividad]="actividadSeleccionada()" [soloLectura]="!editable()"
+                                        (guardado)="alGuardar($event)" (cancelado)="cerrarPanel()" />
+                }
+                @case ('GATEWAY') {
+                  <app-gateway-editor [detalle]="proceso" [gateway]="gatewaySeleccionado()" [soloLectura]="!editable()"
+                                      (guardado)="alGuardar($event)" (cancelado)="cerrarPanel()" />
+                }
+                @case ('ARCO') {
+                  <app-arco-editor [detalle]="proceso" [arco]="arcoSeleccionado()" [soloLectura]="!editable()"
+                                   (guardado)="alGuardar($event)" (cancelado)="cerrarPanel()" />
+                }
+                @case ('EVENTO') {
+                  <app-evento-editor [detalle]="proceso" [evento]="eventoSeleccionado()" [soloLectura]="!editable()"
+                                     (guardado)="alGuardar($event)" (cancelado)="cerrarPanel()" />
+                }
+                @case ('FLUJO') {
+                  <app-flujo-editor [detalle]="proceso" [flujo]="flujoSeleccionado()" [soloLectura]="!editable()"
+                                    (guardado)="alGuardar($event)" (cancelado)="cerrarPanel()" />
+                }
+              }
+              @if (!editable()) {
+                <button type="button" class="cerrar-panel" (click)="cerrarPanel()">Cerrar</button>
+              }
+            </aside>
+          }
+        </div>
+
+        <div class="paneles-inferiores">
+          <section class="tarjeta">
+            <h2>Resumen del modelo</h2>
+            <dl class="resumen">
+              @for (dato of resumen(); track dato.nombre) {
+                <div><dt>{{ dato.nombre }}</dt><dd>{{ dato.valor }}</dd></div>
+              }
+            </dl>
+          </section>
+
+          <section class="tarjeta">
+            <h2>Revisión de coherencia</h2>
+            @if (revisionModelo().length) {
+              <app-aviso tipo="advertencia" [mensajes]="revisionModelo()" />
+            } @else {
+              <app-aviso tipo="exito" mensajes="El modelo no presenta problemas de coherencia." />
+            }
+          </section>
+        </div>
+      }
+
+      @case ('historial') {
+        <section class="tarjeta">
+          <h2>Historial de cambios</h2>
+          @if (cargandoHistorial()) {
+            <p role="status">Cargando historial...</p>
+          } @else if (!historial().length) {
+            <p>Aún no hay cambios registrados.</p>
+          } @else {
+            <div class="tabla-contenedor">
+              <table>
+                <thead><tr><th scope="col">Fecha</th><th scope="col">Usuario</th><th scope="col">Cambio</th></tr></thead>
+                <tbody>
+                  @for (registro of historial(); track registro.id) {
+                    <tr>
+                      <td class="fecha">{{ registro.fecha | date: 'dd/MM/yyyy HH:mm' }}</td>
+                      <td>{{ registro.usuario ?? '—' }}</td>
+                      <td>{{ registro.descripcion }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </section>
+      }
+
+      @case ('compartir') {
+        <section class="tarjeta">
+          <app-panel-comparticion [procesoId]="proceso.id" />
+        </section>
+      }
+    }
+  }
+</section>

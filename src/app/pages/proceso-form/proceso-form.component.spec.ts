@@ -1,14 +1,14 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
+import { HttpTestingController } from '@angular/common/http/testing';
+import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 import { ProcesoForm } from './proceso-form.component';
+import { proveedoresPrueba } from '../../testing/proveedores-prueba';
 
 describe('Formulario de proceso', () => {
   function preparar(id?: string) {
     TestBed.configureTestingModule({
       imports: [ProcesoForm],
-      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([]),
+      providers: [...proveedoresPrueba(),
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap(id ? { id } : {}) } } }]
     });
     const fixture = TestBed.createComponent(ProcesoForm);

@@ -1,0 +1,173 @@
+:host {
+  display: block;
+}
+
+.editor h3 {
+  margin: 0 0 4px;
+  font-size: 18px;
+  color: var(--color-texto-fuerte);
+}
+
+.editor .ayuda {
+  margin: 0 0 8px;
+  color: var(--color-texto-suave);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+label {
+  display: block;
+  font-weight: 600;
+  font-size: 14px;
+  margin: 14px 0 6px;
+}
+
+label.en-linea {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 400;
+}
+
+label.en-linea input {
+  width: auto;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  background: white;
+  color: var(--color-texto);
+  font: inherit;
+  font-size: 14px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--color-primario);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+}
+
+.error-campo {
+  display: block;
+  margin-top: 4px;
+  color: var(--color-peligro);
+  font-size: 13px;
+}
+
+.acciones {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+button {
+  padding: 9px 14px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  background: white;
+  color: var(--color-texto);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+button.primario {
+  background: var(--color-primario);
+  border-color: var(--color-primario);
+  color: white;
+  font-weight: 600;
+}
+
+button.peligro {
+  color: var(--color-peligro);
+  border-color: #fecaca;
+}
+
+button.pequeno {
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.fila {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.fila input {
+  flex: 1;
+}
+
+.lista-opciones {
+  max-height: 160px;
+  overflow: auto;
+  padding: 8px 10px;
+  border: 1px solid var(--color-borde-suave);
+  border-radius: var(--radio);
+}
+
+.lista-opciones label {
+  margin: 4px 0;
+}
+
+.grupo {
+  margin-top: 16px;
+  padding: 12px;
+  background: var(--color-fondo);
+  border-radius: var(--radio);
+}
+
+.grupo > strong {
+  font-size: 13px;
+}
+
+:focus-visible {
+  outline: 3px solid #818cf8;
+  outline-offset: 2px;
+}
+
+.subtitulo {
+  margin-top: 22px;
+  font-size: 15px;
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.lista li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-borde-suave);
+}
+
+.lista small {
+  display: block;
+  color: var(--color-texto-suave);
+}

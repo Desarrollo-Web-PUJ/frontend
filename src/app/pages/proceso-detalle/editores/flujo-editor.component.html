@@ -1,0 +1,75 @@
+<form class="editor" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+  <h3>{{ flujo() ? 'Flujo de mensaje #' + flujo()!.id : 'Nuevo flujo de mensaje' }}</h3>
+  <p class="ayuda">
+    El flujo de mensaje comunica participantes distintos: parte de un Message Throw y llega a un
+    Message Catch de otro pool o a un participante externo. Se dibuja como línea punteada.
+  </p>
+
+  @if (!emisores().length) {
+    <app-aviso tipo="advertencia" mensajes="Primero crea un evento de mensaje de tipo Throw (el que envía)." />
+  }
+
+  <fieldset [disabled]="guardando() || soloLectura()">
+    <label for="flujo-origen">Mensaje que se envía (Throw) *</label>
+    <select id="flujo-origen" formControlName="origenId">
+      @for (emisor of emisores(); track emisor.id) {
+        <option [ngValue]="emisor.id">{{ emisor.poolNombre }} › {{ emisor.nombreMensaje }}</option>
+      }
+    </select>
+
+    <label for="flujo-tipo-destino">Destino</label>
+    <select id="flujo-tipo-destino" formControlName="tipoDestino">
+      <option value="EVENTO">Message Catch de otro pool</option>
+      <option value="POOL">Participante externo (caja negra)</option>
+    </select>
+
+    @if (tipoDestino() === 'EVENTO') {
+      <label for="flujo-destino">Message Catch que recibe *</label>
+      <select id="flujo-destino" formControlName="destinoId">
+        <option [ngValue]="null" disabled>{{ receptores().length ? 'Selecciona el receptor' : 'No hay Message Catch en otros pools' }}</option>
+        @for (receptor of receptores(); track receptor.id) {
+          <option [ngValue]="receptor.id">{{ receptor.poolNombre }} › {{ receptor.nombreMensaje }}</option>
+        }
+      </select>
+    } @else {
+      <label for="flujo-pool">Participante externo *</label>
+      <select id="flujo-pool" formControlName="poolDestinoId">
+        <option [ngValue]="null" disabled>{{ poolsExternos().length ? 'Selecciona el participante' : 'No hay pools externos' }}</option>
+        @for (pool of poolsExternos(); track pool.id) {
+          <option [ngValue]="pool.id">{{ pool.nombre }}</option>
+        }
+      </select>
+      @if (emisorIncompletoParaExterno()) {
+        <app-aviso tipo="advertencia"
+          mensajes="Para enviar a un sistema externo, el Message Throw debe indicar el tipo de destino externo y el comportamiento ante fallo." />
+      }
+    }
+
+    <label for="flujo-etiqueta">Etiqueta</label>
+    <input id="flujo-etiqueta" formControlName="etiqueta" placeholder="Por defecto se muestra el nombre del mensaje" />
+  </fieldset>
+
+  @if (!soloLectura()) {
+    <div class="acciones">
+      <button class="primario" type="submit" [disabled]="guardando() || !emisores().length">
+        {{ guardando() ? 'Guardando...' : 'Guardar' }}
+      </button>
+      <button type="button" (click)="cancelado.emit()" [disabled]="guardando()">Cerrar</button>
+      @if (flujo()) {
+        <button class="peligro" type="button" (click)="confirmandoEliminacion.set(true)" [disabled]="guardando()">Eliminar flujo</button>
+      }
+    </div>
+  }
+
+  @if (confirmandoEliminacion()) {
+    <app-dialogo-confirmacion
+      mensaje="¿Eliminar este flujo de mensaje?"
+      textoConfirmar="Eliminar"
+      [ocupado]="guardando()"
+      (confirmar)="eliminar()"
+      (cancelar)="confirmandoEliminacion.set(false)" />
+  }
+  @if (error()) {
+    <app-aviso tipo="error" [mensajes]="error()" />
+  }
+</form>

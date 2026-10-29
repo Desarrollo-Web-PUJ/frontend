@@ -1,0 +1,39 @@
+<section class="gestion">
+  <header>
+    <h1>Procesos compartidos conmigo</h1>
+    <p>
+      Procesos que otras empresas compartieron con la tuya. Puedes consultar su diagrama,
+      pero no modificarlo: es la única excepción al aislamiento entre empresas.
+    </p>
+  </header>
+
+  <section class="tarjeta">
+    @if (cargando()) {
+      <p role="status">Cargando procesos compartidos...</p>
+    } @else if (error()) {
+      <div class="error" role="alert">
+        <p>{{ error() }}</p>
+        <button type="button" (click)="cargar()">Reintentar</button>
+      </div>
+    } @else if (!procesos().length) {
+      <p>Ninguna empresa ha compartido procesos con la tuya todavía.</p>
+    } @else {
+      <div class="tabla-contenedor">
+        <table>
+          <thead>
+            <tr><th scope="col">Proceso</th><th scope="col">Compartido desde</th><th scope="col">Acción</th></tr>
+          </thead>
+          <tbody>
+            @for (proceso of procesos(); track proceso.procesoId) {
+              <tr>
+                <td><strong>{{ proceso.procesoNombre }}</strong></td>
+                <td>{{ proceso.fechaCompartido | date: 'dd/MM/yyyy HH:mm' }}</td>
+                <td><a [routerLink]="['/procesos', proceso.procesoId]">Ver diagrama (solo lectura)</a></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</section>

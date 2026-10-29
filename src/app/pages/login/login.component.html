@@ -1,66 +1,49 @@
-
 <section class="login-container">
   <div class="login-card">
 
     <h1>Editor de Procesos</h1>
-    <p>Inicia sesión para administrar tus procesos empresariales.</p>
+    <p>Inicia sesión para administrar los procesos de tu empresa.</p>
 
-    <form [formGroup]="form" (ngSubmit)="ingresar()">
+    @if (aviso()) {
+      <p class="aviso" role="status">{{ aviso() }}</p>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="ingresar()" novalidate>
 
       <div class="form-group">
         <label for="correo">Correo electrónico</label>
+        <input id="correo" type="email" formControlName="correo"
+               placeholder="ejemplo@empresa.com" autocomplete="username" />
 
-        <input
-          id="correo"
-          type="email"
-          formControlName="correo"
-          placeholder="ejemplo@empresa.com"
-          autocomplete="username"
-        />
-
-        @if (form.controls.correo.touched &&
-             form.controls.correo.hasError('required')) {
-          <small class="error">
-            El correo es obligatorio.
-          </small>
+        @if (form.controls.correo.touched && form.controls.correo.hasError('required')) {
+          <small class="error">El correo es obligatorio.</small>
         }
-
-        @if (form.controls.correo.touched &&
-             form.controls.correo.hasError('email')) {
-          <small class="error">
-            Ingresa un correo válido.
-          </small>
+        @if (form.controls.correo.touched && form.controls.correo.hasError('email')) {
+          <small class="error">Ingresa un correo válido.</small>
         }
       </div>
 
       <div class="form-group">
         <label for="contrasena">Contraseña</label>
+        <input id="contrasena" type="password" formControlName="contrasena"
+               placeholder="Ingresa tu contraseña" autocomplete="current-password" />
 
-        <input
-          id="contrasena"
-          type="password"
-          formControlName="contrasena"
-          placeholder="Ingresa tu contraseña"
-          autocomplete="current-password"
-        />
-
-        @if (form.controls.contrasena.touched &&
-             form.controls.contrasena.invalid) {
-          <small class="error">
-            La contraseña es obligatoria.
-          </small>
+        @if (form.controls.contrasena.touched && form.controls.contrasena.invalid) {
+          <small class="error">La contraseña es obligatoria.</small>
         }
       </div>
 
-      <button type="submit" class="btn-login">
-        Iniciar sesión
+      <button type="submit" class="btn-login" [disabled]="ingresando()">
+        {{ ingresando() ? 'Ingresando...' : 'Iniciar sesión' }}
       </button>
 
       @if (mensaje()) {
-        <p class="mensaje">{{ mensaje() }}</p>
+        <p class="mensaje" role="alert">{{ mensaje() }}</p>
       }
-
     </form>
 
+    <p class="registro">
+      ¿Tu empresa aún no tiene cuenta? <a routerLink="/registro">Registrar empresa</a>
+    </p>
   </div>
 </section>

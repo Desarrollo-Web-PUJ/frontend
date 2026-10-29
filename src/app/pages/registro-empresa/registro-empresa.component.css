@@ -1,0 +1,9 @@
+.registro {
+  max-width: 720px;
+}
+
+.separado {
+  margin-top: 28px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-borde-suave);
+}

@@ -1,0 +1,59 @@
+<section class="gestion registro">
+  <nav class="navegacion" aria-label="Navegación">
+    <a routerLink="/login">← Volver al inicio de sesión</a>
+  </nav>
+
+  <header>
+    <h1>Registrar empresa</h1>
+    <p>Crea el espacio de tu organización. La cuenta que registres será el administrador inicial.</p>
+  </header>
+
+  <form class="tarjeta" [formGroup]="form" (ngSubmit)="registrar()" novalidate>
+    <fieldset [disabled]="guardando()">
+      <legend>Datos de la empresa</legend>
+
+      <label for="nombre">Nombre de la empresa *</label>
+      <input id="nombre" formControlName="nombre" autocomplete="organization" />
+      @if (invalido('nombre')) { <small class="error-campo">Escribe el nombre de la empresa.</small> }
+
+      <label for="nit">NIT *</label>
+      <input id="nit" formControlName="nit" />
+      @if (invalido('nit')) { <small class="error-campo">El NIT es obligatorio.</small> }
+
+      <label for="correoContacto">Correo de contacto *</label>
+      <input id="correoContacto" type="email" formControlName="correoContacto" autocomplete="email" />
+      @if (invalido('correoContacto')) { <small class="error-campo">Ingresa un correo válido.</small> }
+    </fieldset>
+
+    <fieldset [disabled]="guardando()" class="separado">
+      <legend>Administrador inicial</legend>
+
+      <label for="adminNombre">Nombre completo *</label>
+      <input id="adminNombre" formControlName="adminNombre" autocomplete="name" />
+      @if (invalido('adminNombre')) { <small class="error-campo">Escribe el nombre del administrador.</small> }
+
+      <label for="adminCorreo">Correo del administrador *</label>
+      <input id="adminCorreo" type="email" formControlName="adminCorreo" autocomplete="username" />
+      @if (invalido('adminCorreo')) { <small class="error-campo">Ingresa un correo válido.</small> }
+
+      <label for="adminPassword">Contraseña *</label>
+      <input id="adminPassword" type="password" formControlName="adminPassword" autocomplete="new-password" />
+      @if (invalido('adminPassword')) { <small class="error-campo">La contraseña debe tener al menos 8 caracteres.</small> }
+
+      <label for="confirmarPassword">Confirmar contraseña *</label>
+      <input id="confirmarPassword" type="password" formControlName="confirmarPassword" autocomplete="new-password" />
+      @if (form.controls.confirmarPassword.touched && form.hasError('noCoinciden')) {
+        <small class="error-campo">Las contraseñas no coinciden.</small>
+      }
+
+      <div class="acciones">
+        <button class="primario" type="submit">{{ guardando() ? 'Registrando...' : 'Registrar empresa' }}</button>
+        <a routerLink="/login">Cancelar</a>
+      </div>
+    </fieldset>
+
+    @if (error()) {
+      <p class="error" role="alert">{{ error() }}</p>
+    }
+  </form>
+</section>

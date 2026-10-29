@@ -1,0 +1,131 @@
+<section class="gestion">
+  <header>
+    <h1>Roles de proceso</h1>
+    <p>
+      Funciones responsables de las actividades (por ejemplo Analista, Supervisor o Auditor).
+      Cada rol da nombre a una lane del diagrama; no es lo mismo que el rol de acceso de un usuario.
+    </p>
+  </header>
+
+  @if (mensaje()) {
+    <app-aviso tipo="exito" [mensajes]="mensaje()" [descartable]="true" (descartar)="mensaje.set('')" />
+  }
+  @if (error()) {
+    <app-aviso tipo="error" [mensajes]="error()" [descartable]="true" (descartar)="error.set('')" />
+  }
+
+  @if (auth.esAdministrador()) {
+    <form class="tarjeta" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+      <fieldset [disabled]="guardando()">
+        <legend>{{ enEdicion() ? 'Editar rol "' + enEdicion()!.nombre + '"' : 'Crear rol de proceso' }}</legend>
+
+        <label for="nombre-rol">Nombre *</label>
+        <input id="nombre-rol" formControlName="nombre" maxlength="80" />
+        @if (form.controls.nombre.touched && form.controls.nombre.invalid) {
+          <small class="error-campo">Escribe un nombre (máximo 80 caracteres).</small>
+        }
+
+        <label for="descripcion-rol">Descripción</label>
+        <textarea id="descripcion-rol" formControlName="descripcion" rows="3" maxlength="500"></textarea>
+
+        <div class="acciones">
+          <button class="primario" type="submit">
+            {{ guardando() ? 'Guardando...' : (enEdicion() ? 'Guardar cambios' : 'Crear rol') }}
+          </button>
+          @if (enEdicion()) {
+            <button type="button" (click)="cancelarEdicion()">Cancelar</button>
+          }
+        </div>
+      </fieldset>
+    </form>
+  } @else {
+    <app-aviso tipo="info" mensajes="Solo el administrador de la empresa puede crear, editar o eliminar roles de proceso." />
+  }
+
+  <section class="tarjeta" aria-labelledby="titulo-roles">
+    <div class="cabecera-listado">
+      <h2 id="titulo-roles">Catálogo de roles</h2>
+      <form class="busqueda" (submit)="$event.preventDefault(); buscar()">
+        <label class="solo-lector" for="buscar-rol">Buscar por nombre</label>
+        <input id="buscar-rol" type="search" [formControl]="busqueda" placeholder="Buscar por nombre" />
+        <button type="submit" [disabled]="cargando()">Buscar</button>
+      </form>
+    </div>
+
+    @if (pendiente(); as rol) {
+      <app-dialogo-confirmacion
+        [mensaje]="'¿Eliminar el rol ' + rol.nombre + '?'"
+        detalle="La eliminación es lógica: el rol queda inactivo y el historial se conserva."
+        textoConfirmar="Confirmar eliminación"
+        [ocupado]="guardando()"
+        (confirmar)="eliminar()"
+        (cancelar)="pendiente.set(null)" />
+    }
+
+    @if (cargando()) {
+      <p role="status">Cargando roles...</p>
+    } @else if (errorCarga()) {
+      <div class="error" role="alert">
+        <p>{{ errorCarga() }}</p>
+        <button type="button" (click)="cargar()">Reintentar</button>
+      </div>
+    } @else if (!roles().length) {
+      <p>No hay roles de proceso{{ busqueda.value ? ' con ese nombre' : '' }}.</p>
+    } @else {
+      <div class="tabla-contenedor">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Rol</th>
+              <th scope="col">Descripción</th>
+              <th scope="col">Procesos donde se usa</th>
+              <th scope="col">Estado</th>
+              @if (auth.esAdministrador()) { <th scope="col">Acciones</th> }
+            </tr>
+          </thead>
+          <tbody>
+            @for (rol of roles(); track rol.id) {
+              <tr>
+                <td><strong>{{ rol.nombre }}</strong></td>
+                <td>{{ rol.descripcion || '—' }}</td>
+                <td>
+                  @if (rol.procesos.length) {
+                    <ul class="usos">
+                      @for (proceso of rol.procesos; track proceso.id) {
+                        <li><a [routerLink]="['/procesos', proceso.id]">{{ proceso.nombre }}</a></li>
+                      }
+                    </ul>
+                  } @else {
+                    <span class="suave">Sin uso</span>
+                  }
+                </td>
+                <td>
+                  <span class="etiqueta" [class.en-uso]="rol.enUso">{{ rol.enUso ? 'En uso' : 'Se puede eliminar' }}</span>
+                </td>
+                @if (auth.esAdministrador()) {
+                  <td>
+                    <div class="acciones">
+                      <button type="button" (click)="editar(rol)" [disabled]="guardando()">Editar</button>
+                      <button class="peligro" type="button" (click)="pendiente.set(rol)"
+                              [disabled]="guardando() || !rol.eliminable"
+                              [attr.title]="rol.eliminable ? null : 'El rol está en uso: reasigne primero sus lanes'">
+                        Eliminar
+                      </button>
+                    </div>
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <app-paginador
+        etiqueta="Páginas de roles"
+        [pagina]="pagina()"
+        [totalPaginas]="totalPaginas()"
+        [deshabilitado]="cargando()"
+        (cambiar)="irAPagina($event)" />
+    }
+  </section>
+</section>

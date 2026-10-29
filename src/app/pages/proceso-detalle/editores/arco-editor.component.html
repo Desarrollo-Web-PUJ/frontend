@@ -1,0 +1,61 @@
+<form class="editor" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+  <h3>{{ arco() ? 'Arco #' + arco()!.id : 'Nuevo arco' }}</h3>
+  <p class="ayuda">
+    El arco fija el orden entre dos elementos del mismo pool. Para comunicar dos pools usa un flujo de mensaje.
+  </p>
+
+  @if (nodos().length < 2) {
+    <app-aviso tipo="advertencia" mensajes="Se necesitan al menos dos elementos (actividades, gateways o eventos) para crear un arco." />
+  }
+
+  <fieldset [disabled]="guardando() || soloLectura()">
+    <label for="arco-origen">Desde *</label>
+    <select id="arco-origen" formControlName="origen">
+      <option value="" disabled>Selecciona el origen</option>
+      @for (nodo of nodos(); track nodo.valor) {
+        <option [value]="nodo.valor">{{ nodo.etiqueta }}</option>
+      }
+    </select>
+
+    <label for="arco-destino">Hacia *</label>
+    <select id="arco-destino" formControlName="destino">
+      <option value="" disabled>{{ destinosPosibles().length ? 'Selecciona el destino' : 'Elige primero el origen' }}</option>
+      @for (nodo of destinosPosibles(); track nodo.valor) {
+        <option [value]="nodo.valor">{{ nodo.etiqueta }}</option>
+      }
+    </select>
+
+    @if (requiereCondicion()) {
+      <label for="arco-condicion">Condición * <small>(gateway {{ gatewayOrigen()!.tipo.toLowerCase() }})</small></label>
+      <input id="arco-condicion" formControlName="condicion" placeholder="Ej.: monto > 1.000.000" />
+    } @else if (gatewayOrigen()) {
+      <p class="ayuda">El gateway es paralelo: sus arcos de salida no llevan condición.</p>
+    }
+
+    <label for="arco-etiqueta">Etiqueta</label>
+    <input id="arco-etiqueta" formControlName="etiqueta" placeholder="Texto visible sobre el arco (opcional)" />
+  </fieldset>
+
+  @if (!soloLectura()) {
+    <div class="acciones">
+      <button class="primario" type="submit" [disabled]="guardando()">{{ guardando() ? 'Guardando...' : 'Guardar' }}</button>
+      <button type="button" (click)="cancelado.emit()" [disabled]="guardando()">Cerrar</button>
+      @if (arco() && esAdministrador()) {
+        <button class="peligro" type="button" (click)="confirmandoEliminacion.set(true)" [disabled]="guardando()">Eliminar arco</button>
+      }
+    </div>
+  }
+
+  @if (confirmandoEliminacion()) {
+    <app-dialogo-confirmacion
+      mensaje="¿Eliminar este arco?"
+      detalle="Si era el único camino, algún elemento puede quedar sin entrada o sin salida."
+      textoConfirmar="Eliminar"
+      [ocupado]="guardando()"
+      (confirmar)="eliminar()"
+      (cancelar)="confirmandoEliminacion.set(false)" />
+  }
+  @if (error()) {
+    <app-aviso tipo="error" [mensajes]="error()" />
+  }
+</form>
