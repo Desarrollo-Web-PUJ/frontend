@@ -1,0 +1,190 @@
+@let vista = layout();
+
+<div class="lienzo" [class.editable]="editable()">
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    role="img"
+    [attr.aria-label]="'Diagrama del proceso ' + detalle().nombre"
+    [attr.width]="vista.ancho"
+    [attr.height]="vista.alto"
+    [attr.viewBox]="'0 0 ' + vista.ancho + ' ' + vista.alto"
+    (click)="limpiarSeleccion()">
+
+    <defs>
+      <marker id="flecha-secuencia" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" class="punta-secuencia" />
+      </marker>
+      <marker id="flecha-mensaje" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" class="punta-mensaje" />
+      </marker>
+      <marker id="inicio-mensaje" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7">
+        <circle cx="5" cy="5" r="4" class="inicio-mensaje" />
+      </marker>
+    </defs>
+
+    <!-- Pools y lanes -->
+    @for (banda of vista.pools; track banda.pool.id) {
+      <g class="pool" [class.externo]="banda.pool.tipo === 'EXTERNO'"
+         [class.seleccionado]="estaSeleccionado('POOL', banda.pool.id)">
+        <rect class="pool-marco"
+              [attr.x]="dim.margen" [attr.y]="banda.y"
+              [attr.width]="vista.ancho - 2 * dim.margen" [attr.height]="banda.alto" />
+
+        @if (banda.pool.tipo === 'EXTERNO') {
+          <!-- Participante externo: caja negra, solo su nombre (HU-21) -->
+          <text class="pool-externo-nombre"
+                [attr.x]="vista.ancho / 2" [attr.y]="banda.y + banda.alto / 2"
+                (click)="elegir('POOL', banda.pool.id, $event)">
+            {{ banda.pool.nombre }} · participante externo
+          </text>
+        } @else {
+          <g class="etiqueta-pool" tabindex="0" role="button"
+             [attr.aria-label]="'Pool ' + banda.pool.nombre"
+             (click)="elegir('POOL', banda.pool.id, $event)"
+             (keydown.enter)="elegir('POOL', banda.pool.id, $event)">
+            <rect [attr.x]="dim.margen" [attr.y]="banda.y" [attr.width]="dim.anchoEtiquetaPool" [attr.height]="banda.alto" />
+            <text [attr.transform]="'translate(' + (dim.margen + dim.anchoEtiquetaPool / 2 + 5) + ' ' + (banda.y + banda.alto / 2) + ') rotate(-90)'">
+              {{ banda.pool.nombre }}
+            </text>
+          </g>
+
+          @for (franja of banda.lanes; track franja.lane.id) {
+            <g class="lane" [class.seleccionado]="estaSeleccionado('LANE', franja.lane.id)">
+              <rect class="lane-marco"
+                    [attr.x]="dim.margen + dim.anchoEtiquetaPool" [attr.y]="franja.y"
+                    [attr.width]="vista.ancho - 2 * dim.margen - dim.anchoEtiquetaPool" [attr.height]="franja.alto" />
+              <g class="etiqueta-lane" tabindex="0" role="button"
+                 [attr.aria-label]="'Lane ' + franja.lane.nombre"
+                 (click)="elegir('LANE', franja.lane.id, $event)"
+                 (keydown.enter)="elegir('LANE', franja.lane.id, $event)">
+                <rect [attr.x]="dim.margen + dim.anchoEtiquetaPool" [attr.y]="franja.y"
+                      [attr.width]="dim.anchoEtiquetaLane" [attr.height]="franja.alto" />
+                <text [attr.transform]="'translate(' + (dim.margen + dim.anchoEtiquetaPool + dim.anchoEtiquetaLane / 2 + 5) + ' ' + (franja.y + franja.alto / 2) + ') rotate(-90)'">
+                  {{ franja.lane.nombre }}
+                </text>
+              </g>
+            </g>
+          }
+
+          @if (!banda.lanes.length) {
+            <text class="vacio" [attr.x]="origenX + 16" [attr.y]="banda.y + banda.alto / 2">
+              Este pool aún no tiene lanes
+            </text>
+          }
+        }
+      </g>
+    }
+
+    <!-- Arcos (flujos de secuencia, HU-11) -->
+    @for (arco of vista.arcos; track arco.id) {
+      <g class="arco" [class.seleccionado]="estaSeleccionado('ARCO', arco.id)"
+         (click)="elegir('ARCO', arco.id, $event)">
+        <path class="zona-clic" [attr.d]="arco.d" />
+        <path class="trazo" [attr.d]="arco.d" marker-end="url(#flecha-secuencia)" />
+        @if (arco.texto) {
+          <text class="texto-arco" [attr.x]="arco.textoX" [attr.y]="arco.textoY">{{ arco.texto }}</text>
+        }
+      </g>
+    }
+
+    <!-- Flujos de mensaje entre pools (HU-25, HU-26, HU-28) -->
+    @for (mensaje of vista.mensajes; track mensaje.id) {
+      <g class="mensaje" [class.seleccionado]="estaSeleccionado('FLUJO', mensaje.id)"
+         (click)="elegir('FLUJO', mensaje.id, $event)">
+        <path class="zona-clic" [attr.d]="mensaje.d" />
+        <path class="trazo" [attr.d]="mensaje.d" marker-start="url(#inicio-mensaje)" marker-end="url(#flecha-mensaje)" />
+        @if (mensaje.texto) {
+          <text class="texto-mensaje" [attr.x]="mensaje.textoX" [attr.y]="mensaje.textoY">
+            Mensaje: {{ mensaje.texto }}
+          </text>
+        }
+        @if (mensaje.correlacion) {
+          <text class="texto-mensaje" [attr.x]="mensaje.textoX" [attr.y]="mensaje.textoY + 14">
+            Correlación: {{ mensaje.correlacion }}
+          </text>
+        }
+      </g>
+    }
+
+    <!-- Actividades (HU-08) -->
+    @for (nodo of vista.actividades; track nodo.actividad.id) {
+      <g class="nodo actividad" tabindex="0" role="button"
+         [attr.aria-label]="'Actividad ' + nodo.actividad.nombre"
+         [class.seleccionado]="estaSeleccionado('ACTIVIDAD', nodo.actividad.id)"
+         (pointerdown)="iniciarArrastre($event, nodo.caja)"
+         (pointermove)="moverArrastre($event)"
+         (pointerup)="terminarArrastre()"
+         (pointercancel)="cancelarArrastre()"
+         (click)="$event.stopPropagation()"
+         (keydown.enter)="elegir('ACTIVIDAD', nodo.actividad.id, $event)">
+        <rect [attr.x]="nodo.caja.x" [attr.y]="nodo.caja.y"
+              [attr.width]="nodo.caja.ancho" [attr.height]="nodo.caja.alto" rx="10" />
+        <text class="tipo-actividad" [attr.x]="nodo.caja.x + 8" [attr.y]="nodo.caja.y + 13">
+          {{ etiquetaActividad(nodo.actividad.tipo) }}
+        </text>
+        @for (linea of partirTexto(nodo.actividad.nombre); track $index) {
+          <text class="nombre-actividad"
+                [attr.x]="nodo.caja.x + nodo.caja.ancho / 2"
+                [attr.y]="nodo.caja.y + 31 + $index * 14">{{ linea }}</text>
+        }
+      </g>
+    }
+
+    <!-- Gateways (HU-14): el símbolo interior indica el tipo -->
+    @for (nodo of vista.gateways; track nodo.gateway.id) {
+      @let cx = nodo.caja.x + nodo.caja.ancho / 2;
+      @let cy = nodo.caja.y + nodo.caja.alto / 2;
+      <g class="nodo gateway" tabindex="0" role="button"
+         [attr.aria-label]="'Gateway ' + nodo.gateway.tipo.toLowerCase()"
+         [class.seleccionado]="estaSeleccionado('GATEWAY', nodo.gateway.id)"
+         (pointerdown)="iniciarArrastre($event, nodo.caja)"
+         (pointermove)="moverArrastre($event)"
+         (pointerup)="terminarArrastre()"
+         (pointercancel)="cancelarArrastre()"
+         (click)="$event.stopPropagation()"
+         (keydown.enter)="elegir('GATEWAY', nodo.gateway.id, $event)">
+        <polygon [attr.points]="puntosRombo(nodo.caja)" />
+        @switch (nodo.gateway.tipo) {
+          @case ('EXCLUSIVO') {
+            <path class="simbolo" [attr.d]="'M ' + (cx - 9) + ' ' + (cy - 9) + ' L ' + (cx + 9) + ' ' + (cy + 9) + ' M ' + (cx + 9) + ' ' + (cy - 9) + ' L ' + (cx - 9) + ' ' + (cy + 9)" />
+          }
+          @case ('PARALELO') {
+            <path class="simbolo" [attr.d]="'M ' + cx + ' ' + (cy - 12) + ' V ' + (cy + 12) + ' M ' + (cx - 12) + ' ' + cy + ' H ' + (cx + 12)" />
+          }
+          @case ('INCLUSIVO') {
+            <circle class="simbolo" [attr.cx]="cx" [attr.cy]="cy" r="10" />
+          }
+        }
+      </g>
+    }
+
+    <!-- Eventos de mensaje (HU-25, HU-27) -->
+    @for (nodo of vista.eventos; track nodo.evento.id) {
+      @let cx = nodo.caja.x + nodo.caja.ancho / 2;
+      @let cy = nodo.caja.y + nodo.caja.alto / 2;
+      @let r = nodo.caja.ancho / 2;
+      <g class="nodo evento" tabindex="0" role="button"
+         [attr.aria-label]="'Evento de mensaje ' + nodo.evento.nombreMensaje"
+         [class.throw]="nodo.evento.tipo === 'THROW'"
+         [class.seleccionado]="estaSeleccionado('EVENTO', nodo.evento.id)"
+         (pointerdown)="iniciarArrastre($event, nodo.caja)"
+         (pointermove)="moverArrastre($event)"
+         (pointerup)="terminarArrastre()"
+         (pointercancel)="cancelarArrastre()"
+         (click)="$event.stopPropagation()"
+         (keydown.enter)="elegir('EVENTO', nodo.evento.id, $event)">
+        <circle class="borde" [attr.cx]="cx" [attr.cy]="cy" [attr.r]="r" />
+        @if (nodo.evento.tipo === 'CATCH_INTERMEDIO') {
+          <circle class="borde-interior" [attr.cx]="cx" [attr.cy]="cy" [attr.r]="r - 4" />
+        }
+        <!-- Sobre: relleno en el Throw (envía), vacío en el Catch (recibe) -->
+        <rect class="sobre" [attr.x]="cx - 10" [attr.y]="cy - 7" width="20" height="14" rx="1.5" />
+        <path class="sobre-solapa" [attr.d]="'M ' + (cx - 10) + ' ' + (cy - 7) + ' L ' + cx + ' ' + (cy + 1) + ' L ' + (cx + 10) + ' ' + (cy - 7)" />
+        <!-- El nombre va encima: debajo suele pasar la línea del flujo de mensaje -->
+        <text class="nombre-evento" [attr.x]="cx" [attr.y]="nodo.caja.y - 8">
+          {{ nodo.evento.nombreMensaje }}
+        </text>
+      </g>
+    }
+  </svg>
+</div>

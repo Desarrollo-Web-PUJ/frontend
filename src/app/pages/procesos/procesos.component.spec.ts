@@ -1,9 +1,8 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter } from '@angular/router';
+import { HttpTestingController } from '@angular/common/http/testing';
 import { Procesos } from './procesos.component';
 import { AuthService } from '../../services/auth.service';
+import { proveedoresPrueba } from '../../testing/proveedores-prueba';
 
 const proceso = { id: 7, nombre: 'Compras', categoria: 'Ventas', estado: 'BORRADOR' as const, activo: true };
 const pagina = { content: [proceso], number: 0, totalPages: 1, totalElements: 1 };
@@ -12,7 +11,7 @@ describe('Listado de procesos', () => {
   let http: HttpTestingController;
   beforeEach(() => {
     sessionStorage.setItem('usuarioActual', JSON.stringify({ usuarioId: 1, empresaId: 2, rol: 'ADMINISTRADOR' }));
-    TestBed.configureTestingModule({ imports: [Procesos], providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])] });
+    TestBed.configureTestingModule({ imports: [Procesos], providers: proveedoresPrueba() });
     http = TestBed.inject(HttpTestingController);
   });
   afterEach(() => { http.verify(); sessionStorage.clear(); });
@@ -23,18 +22,20 @@ describe('Listado de procesos', () => {
     fixture.detectChanges();
     return fixture;
   }
-  it('muestra navegación y acciones para el administrador', () => {
+  it('muestra las acciones del administrador y el enlace al diagrama', () => {
     const fixture = preparar();
-    expect(fixture.nativeElement.querySelector('a[href="/usuarios"]')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('a[href="/procesos/nuevo"]')).not.toBeNull();
-    expect(fixture.nativeElement.textContent).toContain('Editar');
+    expect(fixture.nativeElement.querySelector('a[href="/procesos/7"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('a[href="/procesos/7/editar"]')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Eliminar');
   });
-  it('oculta acciones de modificación para solo lectura', () => {
+  it('solo lectura puede ver el diagrama pero no modificar', () => {
     const auth = TestBed.inject(AuthService);
     auth.usuario.set({ ...auth.usuario()!, rol: 'LECTURA' });
     const fixture = preparar();
-    expect(fixture.nativeElement.querySelector('a[href="/usuarios"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('a[href="/procesos/7"]')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('a[href="/procesos/nuevo"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('a[href="/procesos/7/editar"]')).toBeNull();
     expect(fixture.nativeElement.textContent).not.toContain('Eliminar');
   });
   it('reinicia la paginación al buscar y permite limpiar filtros', () => {

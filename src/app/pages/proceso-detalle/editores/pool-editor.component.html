@@ -1,0 +1,44 @@
+<form class="editor" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+  <h3>{{ pool() ? 'Pool: ' + pool()!.nombre : 'Nuevo pool' }}</h3>
+  <p class="ayuda">
+    Un pool es un participante del proceso. El externo (cliente, proveedor, sistema) se dibuja
+    como caja negra: no tiene lanes ni elementos internos.
+  </p>
+
+  <fieldset [disabled]="guardando() || soloLectura()">
+    <label for="pool-nombre">Nombre *</label>
+    <input id="pool-nombre" formControlName="nombre" />
+    @if (form.controls.nombre.touched && form.controls.nombre.invalid) {
+      <small class="error-campo">Escribe el nombre del participante.</small>
+    }
+
+    <label for="pool-tipo">Tipo de participante</label>
+    <select id="pool-tipo" formControlName="tipo">
+      <option value="PROPIO">Empresa propietaria (con lanes)</option>
+      <option value="EXTERNO">Participante externo (caja negra)</option>
+    </select>
+  </fieldset>
+
+  @if (!soloLectura()) {
+    <div class="acciones">
+      <button class="primario" type="submit" [disabled]="guardando()">{{ guardando() ? 'Guardando...' : 'Guardar' }}</button>
+      <button type="button" (click)="cancelado.emit()" [disabled]="guardando()">Cerrar</button>
+      @if (pool() && esAdministrador()) {
+        <button class="peligro" type="button" (click)="confirmandoEliminacion.set(true)" [disabled]="guardando()">Eliminar pool</button>
+      }
+    </div>
+  }
+
+  @if (confirmandoEliminacion()) {
+    <app-dialogo-confirmacion
+      [mensaje]="'¿Eliminar el pool ' + pool()!.nombre + '?'"
+      detalle="Solo se puede eliminar un pool sin lanes, gateways ni eventos."
+      textoConfirmar="Eliminar"
+      [ocupado]="guardando()"
+      (confirmar)="eliminar()"
+      (cancelar)="confirmandoEliminacion.set(false)" />
+  }
+  @if (error()) {
+    <app-aviso tipo="error" [mensajes]="error()" />
+  }
+</form>

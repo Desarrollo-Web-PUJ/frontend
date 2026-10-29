@@ -1,0 +1,52 @@
+<form class="editor" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+  <h3>{{ gateway() ? 'Gateway #' + gateway()!.id : 'Nuevo gateway' }}</h3>
+  <p class="ayuda">
+    Un gateway no ejecuta trabajo: decide por dónde sigue el flujo. Exclusivo (X): un solo camino.
+    Paralelo (+): todos a la vez, sin condiciones. Inclusivo (O): uno o varios según su condición.
+  </p>
+
+  <fieldset [disabled]="guardando() || soloLectura()">
+    <label for="gateway-tipo">Tipo *</label>
+    <select id="gateway-tipo" formControlName="tipo">
+      @for (tipo of tipos; track tipo[0]) {
+        <option [value]="tipo[0]">{{ tipo[1] }}</option>
+      }
+    </select>
+
+    <label for="gateway-pool">Pool *</label>
+    <select id="gateway-pool" formControlName="poolId">
+      @for (pool of poolsPropios(); track pool.id) {
+        <option [ngValue]="pool.id">{{ pool.nombre }}</option>
+      }
+    </select>
+
+    @if (gateway()) {
+      <p class="ayuda">Arcos de salida: {{ arcosSalientes() }}. Edita cada arco para cambiar su condición.</p>
+    }
+  </fieldset>
+
+  @if (!soloLectura()) {
+    <div class="acciones">
+      <button class="primario" type="submit" [disabled]="guardando()">{{ guardando() ? 'Guardando...' : 'Guardar' }}</button>
+      <button type="button" (click)="cancelado.emit()" [disabled]="guardando()">Cerrar</button>
+      @if (gateway() && esAdministrador()) {
+        <button class="peligro" type="button" (click)="confirmandoEliminacion.set(true)" [disabled]="guardando()">Eliminar gateway</button>
+      }
+    </div>
+  }
+
+  @if (confirmandoEliminacion()) {
+    <app-dialogo-confirmacion
+      [mensaje]="'¿Eliminar el gateway #' + gateway()!.id + '?'"
+      [detalle]="arcosSalientes() >= 2
+        ? 'Se eliminarán sus arcos y la ramificación quedará sin punto de decisión: el flujo puede perder coherencia.'
+        : 'Se eliminarán también los arcos conectados.'"
+      textoConfirmar="Eliminar"
+      [ocupado]="guardando()"
+      (confirmar)="eliminar()"
+      (cancelar)="confirmandoEliminacion.set(false)" />
+  }
+  @if (error()) {
+    <app-aviso tipo="error" [mensajes]="error()" />
+  }
+</form>

@@ -1,0 +1,265 @@
+:host {
+  display: block;
+}
+
+.lienzo {
+  overflow: auto;
+  max-height: 72vh;
+  background:
+    radial-gradient(circle, #e2e8f0 1px, transparent 1px) 0 0 / 18px 18px,
+    #ffffff;
+  border: 1px solid var(--color-borde-suave);
+  border-radius: var(--radio-tarjeta);
+}
+
+svg {
+  display: block;
+  font-family: Arial, Helvetica, sans-serif;
+  user-select: none;
+}
+
+/* Pools y lanes */
+.pool-marco {
+  fill: rgba(255, 255, 255, 0.85);
+  stroke: #475569;
+  stroke-width: 1.5;
+}
+
+.pool.externo .pool-marco {
+  fill: #f8fafc;
+  stroke-dasharray: 6 4;
+}
+
+.pool.seleccionado .pool-marco {
+  stroke: var(--color-primario);
+  stroke-width: 3;
+}
+
+.etiqueta-pool rect {
+  fill: #e2e8f0;
+  stroke: #475569;
+  stroke-width: 1.5;
+}
+
+.etiqueta-pool text,
+.etiqueta-lane text {
+  font-size: 13px;
+  font-weight: 700;
+  fill: var(--color-texto-fuerte);
+  text-anchor: middle;
+}
+
+.etiqueta-lane rect {
+  fill: var(--color-primario-suave);
+  stroke: #94a3b8;
+}
+
+.etiqueta-lane text {
+  fill: var(--color-primario-oscuro);
+  font-size: 12px;
+}
+
+.lane-marco {
+  fill: transparent;
+  stroke: #94a3b8;
+}
+
+.lane.seleccionado .lane-marco,
+.lane.seleccionado .etiqueta-lane rect {
+  stroke: var(--color-primario);
+  stroke-width: 2.5;
+}
+
+.pool-externo-nombre {
+  font-size: 14px;
+  fill: var(--color-texto-suave);
+  text-anchor: middle;
+  dominant-baseline: middle;
+  cursor: pointer;
+}
+
+.vacio {
+  font-size: 13px;
+  fill: #94a3b8;
+  font-style: italic;
+}
+
+.etiqueta-pool,
+.etiqueta-lane {
+  cursor: pointer;
+}
+
+/* Nodos */
+.nodo {
+  cursor: pointer;
+}
+
+.editable .nodo {
+  cursor: grab;
+}
+
+.editable .nodo:active {
+  cursor: grabbing;
+}
+
+.nodo:focus {
+  outline: none;
+}
+
+.actividad rect {
+  fill: #ffffff;
+  stroke: #334155;
+  stroke-width: 1.5;
+}
+
+.actividad:hover rect,
+.actividad:focus-visible rect {
+  stroke: var(--color-primario);
+}
+
+.actividad.seleccionado rect {
+  stroke: var(--color-primario);
+  stroke-width: 3;
+  fill: #f5f3ff;
+}
+
+.tipo-actividad {
+  font-size: 9px;
+  fill: #94a3b8;
+  text-transform: uppercase;
+}
+
+.nombre-actividad {
+  font-size: 12px;
+  fill: var(--color-texto-fuerte);
+  text-anchor: middle;
+}
+
+.gateway polygon {
+  fill: #ffffff;
+  stroke: #334155;
+  stroke-width: 1.5;
+}
+
+.gateway .simbolo {
+  fill: none;
+  stroke: #334155;
+  stroke-width: 3;
+}
+
+.gateway.seleccionado polygon,
+.gateway:focus-visible polygon {
+  stroke: var(--color-primario);
+  stroke-width: 3;
+}
+
+.evento .borde {
+  fill: #ffffff;
+  stroke: #334155;
+  stroke-width: 1.5;
+}
+
+.evento .borde-interior {
+  fill: none;
+  stroke: #334155;
+  stroke-width: 1.2;
+}
+
+.evento .sobre {
+  fill: #ffffff;
+  stroke: #334155;
+  stroke-width: 1.2;
+}
+
+.evento .sobre-solapa {
+  fill: none;
+  stroke: #334155;
+  stroke-width: 1.2;
+}
+
+.evento.throw .borde {
+  stroke-width: 3;
+}
+
+.evento.throw .sobre {
+  fill: #334155;
+}
+
+.evento.throw .sobre-solapa {
+  stroke: #ffffff;
+}
+
+.evento.seleccionado .borde,
+.evento:focus-visible .borde {
+  stroke: var(--color-primario);
+  stroke-width: 3;
+}
+
+.nombre-evento {
+  font-size: 11px;
+  fill: var(--color-texto);
+  text-anchor: middle;
+}
+
+/* Arcos y mensajes */
+.arco,
+.mensaje {
+  cursor: pointer;
+}
+
+.zona-clic {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 12;
+}
+
+.arco .trazo {
+  fill: none;
+  stroke: #475569;
+  stroke-width: 1.6;
+}
+
+.punta-secuencia {
+  fill: #475569;
+}
+
+.mensaje .trazo {
+  fill: none;
+  stroke: #4f46e5;
+  stroke-width: 1.5;
+  stroke-dasharray: 6 4;
+}
+
+.punta-mensaje {
+  fill: #ffffff;
+  stroke: #4f46e5;
+  stroke-width: 1.2;
+}
+
+.inicio-mensaje {
+  fill: #ffffff;
+  stroke: #4f46e5;
+  stroke-width: 1.2;
+}
+
+.arco.seleccionado .trazo,
+.mensaje.seleccionado .trazo {
+  stroke: var(--color-primario);
+  stroke-width: 3;
+}
+
+.texto-arco {
+  font-size: 11px;
+  fill: var(--color-texto);
+  paint-order: stroke;
+  stroke: #ffffff;
+  stroke-width: 3px;
+}
+
+.texto-mensaje {
+  font-size: 11px;
+  fill: var(--color-primario-oscuro);
+  paint-order: stroke;
+  stroke: #ffffff;
+  stroke-width: 3px;
+}

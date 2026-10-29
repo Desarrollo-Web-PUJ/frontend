@@ -1,59 +1,105 @@
 <section class="gestion">
-  <nav class="navegacion" aria-label="Navegación de empresa"><a routerLink="/procesos">← Volver a procesos</a></nav>
   <header>
     <h1>Usuarios de la empresa</h1>
-    <p>Registra colaboradores y define qué pueden hacer dentro de tu empresa.</p>
+    <p>Registra colaboradores y define qué pueden hacer dentro de tu empresa (rol de acceso).</p>
   </header>
-  @if (mensaje()) { <p class="exito" role="status">{{ mensaje() }}</p> }
-  @if (error()) { <p class="error" role="alert">{{ error() }} <a routerLink="/login">Ir al inicio de sesión</a></p> }
-  <form class="tarjeta" [formGroup]="form" (ngSubmit)="registrar()">
+
+  @if (mensaje()) {
+    <app-aviso tipo="exito" [mensajes]="mensaje()" [descartable]="true" (descartar)="mensaje.set('')" />
+  }
+  @if (error()) {
+    <app-aviso tipo="error" [mensajes]="error()" />
+  }
+
+  <form class="tarjeta" [formGroup]="form" (ngSubmit)="registrar()" novalidate>
     <fieldset [disabled]="guardando() || cargando()">
       <legend>Registrar colaborador</legend>
+
       <label for="nombre">Nombre *</label>
-      <input id="nombre" formControlName="nombre" autocomplete="name" required />
-      @if (form.controls.nombre.touched && form.controls.nombre.invalid) { <small class="error-campo">Escribe el nombre del colaborador.</small> }
+      <input id="nombre" formControlName="nombre" autocomplete="name" />
+      @if (form.controls.nombre.touched && form.controls.nombre.invalid) {
+        <small class="error-campo">Escribe el nombre del colaborador.</small>
+      }
+
       <label for="correo">Correo electrónico *</label>
-      <input id="correo" type="email" formControlName="correo" autocomplete="off" required />
-      @if (form.controls.correo.touched && form.controls.correo.invalid) { <small class="error-campo">Ingresa un correo válido.</small> }
+      <input id="correo" type="email" formControlName="correo" autocomplete="off" />
+      @if (form.controls.correo.touched && form.controls.correo.invalid) {
+        <small class="error-campo">Ingresa un correo válido.</small>
+      }
+
       <label for="password">Contraseña inicial *</label>
-      <input id="password" type="password" formControlName="password" autocomplete="new-password" required minlength="8" />
-      @if (form.controls.password.touched && form.controls.password.invalid) { <small class="error-campo">La contraseña debe tener al menos 8 caracteres y no contener solo espacios.</small> }
+      <input id="password" type="password" formControlName="password" autocomplete="new-password" />
+      @if (form.controls.password.touched && form.controls.password.invalid) {
+        <small class="error-campo">La contraseña debe tener al menos 8 caracteres y no contener solo espacios.</small>
+      }
+
       <label for="rol">Rol de acceso *</label>
       <select id="rol" formControlName="rol">
-        @for (rol of roles; track rol.valor) { <option [value]="rol.valor">{{ rol.nombre }}</option> }
+        @for (rol of roles; track rol.valor) {
+          <option [value]="rol.valor">{{ rol.nombre }}</option>
+        }
       </select>
-      <p class="ayuda">Administrador: gestiona usuarios y procesos. Editor: crea y modifica procesos. Solo lectura: consulta información.</p>
+      <p class="ayuda">
+        Administrador: gestiona usuarios, roles y procesos. Editor: crea y modifica procesos.
+        Solo lectura: consulta información. No se debe confundir con los roles de proceso, que nombran las lanes.
+      </p>
+
       <button class="primario" type="submit">{{ guardando() ? 'Guardando...' : 'Registrar colaborador' }}</button>
     </fieldset>
   </form>
+
   <section class="tarjeta" aria-labelledby="titulo-listado">
     <h2 id="titulo-listado">Colaboradores</h2>
+
+    @if (pendiente(); as usuario) {
+      <app-dialogo-confirmacion
+        [mensaje]="'¿Desactivar a ' + usuario.nombre + '?'"
+        detalle="Su cuenta quedará inactiva; los procesos y el historial de la empresa se conservan."
+        textoConfirmar="Confirmar desactivación"
+        [ocupado]="guardando()"
+        (confirmar)="desactivar()"
+        (cancelar)="pendiente.set(null)" />
+    }
+
     @if (cargando()) {
       <p role="status">Cargando colaboradores...</p>
     } @else if (errorCarga()) {
-      <div class="error" role="alert"><p>{{ errorCarga() }}</p><button type="button" (click)="cargar()">Reintentar</button><a routerLink="/login">Ir al inicio de sesión</a></div>
+      <div class="error" role="alert">
+        <p>{{ errorCarga() }}</p>
+        <button type="button" (click)="cargar()">Reintentar</button>
+      </div>
     } @else if (!usuarios().length) {
       <p>No hay colaboradores registrados.</p>
     } @else {
       <div class="tabla-contenedor">
         <table>
-          <thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <thead>
+            <tr><th scope="col">Nombre</th><th scope="col">Correo</th><th scope="col">Rol</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr>
+          </thead>
           <tbody>
             @for (usuario of usuarios(); track usuario.id) {
               <tr>
-                <td>{{ usuario.nombre }} @if (usuario.id === auth.usuario()?.usuarioId) { <small>(Tú)</small> }</td>
+                <td>{{ usuario.nombre }} @if (esUsuarioActual(usuario)) { <small>(Tú)</small> }</td>
                 <td>{{ usuario.correo }}</td>
                 <td>
                   <label class="rol-label" [for]="'rol-' + usuario.id">Rol de {{ usuario.nombre }}</label>
-                  <select [id]="'rol-' + usuario.id" [value]="rolesElegidos.get(usuario.id) ?? usuario.rol" (change)="elegirRol(usuario.id, $any($event.target).value)" [disabled]="guardando() || !usuario.activo || usuario.id === auth.usuario()?.usuarioId">
-                    @for (rol of roles; track rol.valor) { <option [value]="rol.valor">{{ rol.nombre }}</option> }
+                  <select [id]="'rol-' + usuario.id"
+                          [value]="rolesElegidos.get(usuario.id) ?? usuario.rol"
+                          (change)="elegirRol(usuario.id, $any($event.target).value)"
+                          [disabled]="guardando() || !usuario.activo || esUsuarioActual(usuario)">
+                    @for (rol of roles; track rol.valor) {
+                      <option [value]="rol.valor">{{ rol.nombre }}</option>
+                    }
                   </select>
                 </td>
                 <td>{{ usuario.activo ? 'Activo' : 'Inactivo' }}</td>
                 <td>
-                  @if (usuario.activo && usuario.id !== auth.usuario()?.usuarioId) {
+                  @if (usuario.activo && !esUsuarioActual(usuario)) {
                     <div class="acciones">
-                      <button type="button" (click)="cambiarRol(usuario)" [disabled]="guardando() || !rolesElegidos.has(usuario.id) || rolesElegidos.get(usuario.id) === usuario.rol">Guardar rol</button>
+                      <button type="button" (click)="cambiarRol(usuario)"
+                              [disabled]="guardando() || !rolesElegidos.has(usuario.id) || rolesElegidos.get(usuario.id) === usuario.rol">
+                        Guardar rol
+                      </button>
                       <button class="peligro" type="button" (click)="pendiente.set(usuario)" [disabled]="guardando()">Desactivar</button>
                     </div>
                   }
@@ -63,16 +109,7 @@
           </tbody>
         </table>
       </div>
-      <p class="ayuda">Tu propia cuenta no se modifica desde esta pantalla para conservar tu acceso administrativo.</p>
-    }
-    @if (pendiente(); as usuario) {
-      <div class="confirmacion" role="region" aria-label="Confirmar desactivación">
-        <p>¿Desactivar a <strong>{{ usuario.nombre }}</strong>? Su cuenta quedará inactiva.</p>
-        <div class="acciones">
-          <button class="peligro" type="button" (click)="desactivar()" [disabled]="guardando()">Confirmar desactivación</button>
-          <button type="button" (click)="pendiente.set(null)" [disabled]="guardando()">Cancelar</button>
-        </div>
-      </div>
+      <p class="ayuda">Tu propia cuenta no se modifica desde aquí, para que la empresa no se quede sin administrador.</p>
     }
   </section>
 </section>

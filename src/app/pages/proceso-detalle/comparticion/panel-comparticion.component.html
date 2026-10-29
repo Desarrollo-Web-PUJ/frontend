@@ -1,0 +1,44 @@
+<section class="editor">
+  <h3>Compartir con otras empresas</h3>
+  <p class="ayuda">
+    La empresa invitada podrá consultar el diagrama, pero no editarlo. Pídele su número de empresa:
+    aparece en la barra superior, junto al nombre del usuario.
+  </p>
+
+  @if (mensaje()) {
+    <app-aviso tipo="exito" [mensajes]="mensaje()" />
+  }
+  @if (error()) {
+    <app-aviso tipo="error" [mensajes]="error()" />
+  }
+
+  <form class="fila" (submit)="$event.preventDefault(); compartir()">
+    <label class="solo-lector" for="empresa-destino">Número de la empresa destino</label>
+    <input id="empresa-destino" type="number" min="1" [formControl]="empresaDestino" placeholder="Número de empresa" />
+    <button class="primario" type="submit" [disabled]="guardando()">Compartir</button>
+  </form>
+  @if (empresaDestino.touched && empresaDestino.invalid) {
+    <small class="error-campo">Escribe un número de empresa válido.</small>
+  }
+
+  <h3 class="subtitulo">Empresas con acceso</h3>
+  @if (cargando()) {
+    <p role="status">Cargando...</p>
+  } @else if (!comparticiones().length) {
+    <p class="ayuda">El proceso no está compartido: solo lo ve tu empresa.</p>
+  } @else {
+    <ul class="lista">
+      @for (comparticion of comparticiones(); track comparticion.empresaDestinoId) {
+        <li>
+          <span>
+            <strong>{{ comparticion.empresaDestinoNombre }}</strong> (#{{ comparticion.empresaDestinoId }})
+            <small>desde {{ comparticion.fechaCompartido | date: 'dd/MM/yyyy' }}</small>
+          </span>
+          <button class="peligro pequeno" type="button" (click)="dejarDeCompartir(comparticion)" [disabled]="guardando()">
+            Dejar de compartir
+          </button>
+        </li>
+      }
+    </ul>
+  }
+</section>

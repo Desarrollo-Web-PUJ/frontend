@@ -1,74 +1,37 @@
-
 <section class="procesos-container">
 
-  
-<header class="encabezado">
-
-  <div class="encabezado-contenido">
-
-    <div>
-      <h1>Gestión de Procesos</h1>
-      <p>Consulta y administra los procesos empresariales.</p>
-    </div>
-
-    <button
-      type="button"
-      class="btn-logout"
-      (click)="cerrarSesion()"
-      [disabled]="cerrandoSesion()"
-    >
-      @if (cerrandoSesion()) {
-        Cerrando sesión...
-      } @else {
-        Cerrar sesión
-      }
-    </button>
-
-  </div>
-
-  @if (errorLogout()) {
-    <p class="mensaje-error" role="alert">
-      {{ errorLogout() }}
-    </p>
-  }
-
-</header>
-
-
-  <nav class="acciones" aria-label="Gestión de la empresa">
-    @if (authService.esAdministrador()) { <a routerLink="/usuarios">Gestionar usuarios</a> }
-    @if (authService.puedeEditar()) { <a class="enlace-primario" routerLink="/procesos/nuevo">Crear proceso</a> }
-  </nav>
-  @if (!authService.usuario()) {
-    <p class="mensaje">Inicia sesión nuevamente para cargar tu rol y habilitar las acciones correspondientes. <a routerLink="/login">Iniciar sesión</a></p>
-  }
-  @if (mensaje()) { <p class="mensaje-exito" role="status">{{ mensaje() }}</p> }
-  @if (errorAccion()) { <p class="mensaje-error" role="alert">{{ errorAccion() }}</p> }
-  @if (pendiente(); as proceso) {
-    <section class="confirmacion" aria-label="Confirmar eliminación">
-      <p>¿Eliminar el proceso <strong>{{ proceso.nombre }}</strong>? Quedará inactivo y conservará su historial.</p>
-      <div class="acciones">
-        <button class="btn-logout" type="button" (click)="eliminar()" [disabled]="eliminando() || cargando()">{{ eliminando() ? 'Eliminando...' : 'Confirmar eliminación' }}</button>
-        <button type="button" (click)="pendiente.set(null)" [disabled]="eliminando()">Cancelar</button>
+  <header class="encabezado">
+    <div class="encabezado-contenido">
+      <div>
+        <h1>Procesos</h1>
+        <p>Consulta, modela y administra los procesos de tu empresa.</p>
       </div>
-    </section>
+      @if (authService.puedeEditar()) {
+        <a class="enlace-primario" routerLink="/procesos/nuevo">Crear proceso</a>
+      }
+    </div>
+  </header>
+
+  @if (mensaje()) {
+    <app-aviso tipo="exito" [mensajes]="mensaje()" [descartable]="true" (descartar)="mensaje.set('')" />
+  }
+  @if (errorAccion()) {
+    <app-aviso tipo="error" [mensajes]="errorAccion()" />
+  }
+  @if (pendiente(); as proceso) {
+    <app-dialogo-confirmacion
+      [mensaje]="'¿Eliminar el proceso ' + proceso.nombre + '?'"
+      detalle="Quedará inactivo y conservará su diagrama e historial."
+      textoConfirmar="Confirmar eliminación"
+      [ocupado]="eliminando()"
+      (confirmar)="eliminar()"
+      (cancelar)="pendiente.set(null)" />
   }
 
-  <!-- Formulario de busqueda -->
-  <form
-    class="filtros"
-    [formGroup]="filtros"
-    (ngSubmit)="buscar()"
-  >
-
+  <form class="filtros" [formGroup]="filtros" (ngSubmit)="buscar()">
     <div class="campo">
       <label for="nombre">Nombre del proceso</label>
-      <input
-        id="nombre"
-        type="text"
-        formControlName="nombre"
-        placeholder="Buscar por nombre"
-      />
+      <input id="nombre" type="search" formControlName="nombre" placeholder="Buscar por nombre" />
     </div>
 
     <div class="campo">
@@ -82,84 +45,53 @@
 
     <div class="campo">
       <label for="categoria">Categoría</label>
-      <input
-        id="categoria"
-        type="text"
-        formControlName="categoria"
-        placeholder="Buscar categoría"
-      />
+      <input id="categoria" type="text" formControlName="categoria" placeholder="Filtrar por categoría" />
     </div>
 
     <div class="campo-check">
       <label>
-        <input
-          type="checkbox"
-          formControlName="incluirInactivos"
-        />
+        <input type="checkbox" formControlName="incluirInactivos" />
         Incluir procesos inactivos
       </label>
     </div>
 
-    <button
-      class="btn-buscar"
-      type="submit"
-      [disabled]="cargando()"
-    >
-      Buscar procesos
+    <button class="btn-buscar" type="submit" [disabled]="cargando()">Buscar procesos</button>
+    <button class="btn-secundario" type="button" (click)="limpiarFiltros()" [disabled]="cargando()">
+      Limpiar filtros
     </button>
-    <button type="button" (click)="limpiarFiltros()" [disabled]="cargando()">Limpiar filtros</button>
-
   </form>
 
-  <!-- Estados de la consulta -->
   @if (cargando()) {
-    <p class="mensaje" role="status">
-      Cargando procesos...
-    </p>
+    <p class="mensaje" role="status">Cargando procesos...</p>
   } @else if (error()) {
     <div class="mensaje-error" role="alert">
       <p>{{ error() }}</p>
-      <button type="button" (click)="cargarProcesos()">
-        Reintentar
-      </button>
+      <button type="button" (click)="cargarProcesos()">Reintentar</button>
     </div>
   } @else if (procesos().length === 0) {
-    <p class="mensaje">
-      No se encontraron procesos.
-    </p>
+    <p class="mensaje">No se encontraron procesos.</p>
   } @else {
+    <p class="total">Total de procesos: {{ totalElementos() }}</p>
 
-    <p class="total">
-      Total de procesos: {{ totalElementos() }}
-    </p>
-
-    <!-- Tabla de procesos -->
     <div class="tabla-contenedor">
       <table>
         <thead>
           <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Categoría</th>
-            <th>Estado</th>
-            <th>Activo</th>
-            <th>Acciones</th>
+            <th scope="col">Nombre</th>
+            <th scope="col">Categoría</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Activo</th>
+            <th scope="col">Acciones</th>
           </tr>
         </thead>
-
         <tbody>
           @for (proceso of procesos(); track proceso.id) {
             <tr>
-              <td>{{ proceso.id }}</td>
-              <td>{{ proceso.nombre }}</td>
-              <td>{{ proceso.categoria }}</td>
-
               <td>
-                <span class="estado">
-                  {{ proceso.estado }}
-                </span>
+                <a class="nombre-proceso" [routerLink]="['/procesos', proceso.id]">{{ proceso.nombre }}</a>
               </td>
-
+              <td>{{ proceso.categoria }}</td>
+              <td><span class="estado" [class.publicado]="proceso.estado === 'PUBLICADO'">{{ proceso.estado === 'PUBLICADO' ? 'Publicado' : 'Borrador' }}</span></td>
               <td>
                 @if (proceso.activo) {
                   <span class="activo">Sí</span>
@@ -168,14 +100,17 @@
                 }
               </td>
               <td>
-                @if (proceso.activo && authService.puedeEditar()) {
-                  <div class="acciones">
+                <div class="acciones">
+                  <a [routerLink]="['/procesos', proceso.id]">Ver diagrama</a>
+                  @if (proceso.activo && authService.puedeEditar()) {
                     <a [routerLink]="['/procesos', proceso.id, 'editar']">Editar</a>
-                    @if (authService.esAdministrador()) {
-                      <button class="btn-logout" type="button" (click)="pendiente.set(proceso)" [disabled]="eliminando()">Eliminar</button>
-                    }
-                  </div>
-                } @else { <span>Solo consulta</span> }
+                  }
+                  @if (proceso.activo && authService.esAdministrador()) {
+                    <button class="btn-peligro" type="button" (click)="pendiente.set(proceso)" [disabled]="eliminando()">
+                      Eliminar
+                    </button>
+                  }
+                </div>
               </td>
             </tr>
           }
@@ -183,32 +118,11 @@
       </table>
     </div>
 
-    <!-- Paginación -->
-    <nav class="paginacion" aria-label="Páginas de procesos">
-
-      <button
-        type="button"
-        (click)="paginaAnterior()"
-        [disabled]="cargando() || pagina() === 0"
-      >
-        Anterior
-      </button>
-
-      <span>
-        Página {{ pagina() + 1 }}
-        de {{ totalPaginas() }}
-      </span>
-
-      <button
-        type="button"
-        (click)="paginaSiguiente()"
-        [disabled]="cargando() || pagina() + 1 >= totalPaginas()"
-      >
-        Siguiente
-      </button>
-
-    </nav>
+    <app-paginador
+      etiqueta="Páginas de procesos"
+      [pagina]="pagina()"
+      [totalPaginas]="totalPaginas()"
+      [deshabilitado]="cargando()"
+      (cambiar)="irAPagina($event)" />
   }
-
 </section>
-

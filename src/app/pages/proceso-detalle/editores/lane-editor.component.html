@@ -1,0 +1,57 @@
+<form class="editor" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+  <h3>{{ lane() ? 'Lane: ' + lane()!.nombre : 'Nueva lane' }}</h3>
+  <p class="ayuda">
+    La lane agrupa las actividades de un mismo rol responsable. Su nombre es el del rol de proceso:
+    si el rol se renombra, la lane cambia en todos los procesos.
+  </p>
+
+  <fieldset [disabled]="guardando() || soloLectura()">
+    <label for="lane-pool">Pool *</label>
+    <select id="lane-pool" formControlName="poolId">
+      @for (pool of poolsPropios(); track pool.id) {
+        <option [ngValue]="pool.id">{{ pool.nombre }}</option>
+      }
+    </select>
+
+    <label for="lane-rol">Rol de proceso *</label>
+    <select id="lane-rol" formControlName="rolProcesoId">
+      <option [ngValue]="null" disabled>{{ cargandoRoles() ? 'Cargando roles...' : 'Selecciona un rol' }}</option>
+      @for (rol of roles(); track rol.id) {
+        <option [ngValue]="rol.id">{{ rol.nombre }}</option>
+      }
+    </select>
+    @if (!cargandoRoles() && !roles().length) {
+      <small class="error-campo">La empresa no tiene roles de proceso. Créalos en "Roles de proceso".</small>
+    } @else if (form.controls.rolProcesoId.touched && form.controls.rolProcesoId.invalid) {
+      <small class="error-campo">Selecciona el rol responsable.</small>
+    }
+  </fieldset>
+
+  @if (!soloLectura()) {
+    <div class="acciones">
+      <button class="primario" type="submit" [disabled]="guardando()">{{ guardando() ? 'Guardando...' : 'Guardar' }}</button>
+      <button type="button" (click)="cancelado.emit()" [disabled]="guardando()">Cerrar</button>
+    </div>
+
+    @if (lane()) {
+      <div class="acciones">
+        <button class="pequeno" type="button" (click)="mover(-1)" [disabled]="guardando() || posicion() <= 0">↑ Subir</button>
+        <button class="pequeno" type="button" (click)="mover(1)" [disabled]="guardando() || posicion() >= lanesDelPool().length - 1">↓ Bajar</button>
+        <button class="peligro pequeno" type="button" (click)="confirmandoEliminacion.set(true)" [disabled]="guardando()">Eliminar lane</button>
+      </div>
+    }
+  }
+
+  @if (confirmandoEliminacion()) {
+    <app-dialogo-confirmacion
+      [mensaje]="'¿Eliminar la lane ' + lane()!.nombre + '?'"
+      detalle="No se puede eliminar una lane con actividades: primero reasígnalas a otra lane."
+      textoConfirmar="Eliminar"
+      [ocupado]="guardando()"
+      (confirmar)="eliminar()"
+      (cancelar)="confirmandoEliminacion.set(false)" />
+  }
+  @if (error()) {
+    <app-aviso tipo="error" [mensajes]="error()" />
+  }
+</form>

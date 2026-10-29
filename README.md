@@ -1,48 +1,119 @@
-# Frontend Angular
+# Frontend · Editor y visualizador de procesos
 
-Interfaz del editor de procesos empresariales. Las peticiones usan `/api` y la cookie de sesión del servidor.
+SPA en Angular 22 para registrar empresas, gestionar usuarios y roles, y modelar visualmente procesos de negocio: pools, lanes, actividades, gateways, arcos y mensajes.
+Se comunica con el backend por `/api`, usando la cookie de sesión del servidor.
 
 ## Ejecutar
+
+**Con Docker.** El `docker-compose.yml` está en el repositorio del backend; ver su README. La aplicación queda en http://localhost:4200.
+
+**En desarrollo.** Requiere Node 22.22+ o 24, y el backend en http://localhost:8080.
 
 ```bash
 npm ci
 npm start -- --proxy-config proxy.conf.json
 ```
 
-Abre http://localhost:4200. El proxy dirige las peticiones al backend en http://localhost:8080.
+Abra http://localhost:4200. El proxy reenvía `/api` al backend, igual que nginx en producción, así el navegador trabaja con un único origen.
 
-## Pantallas disponibles
+**Imagen propia.** `Dockerfile` compila con Node 24 y sirve el resultado con nginx. `nginx.conf` hace tres cosas:
+
+- reenvía `/api/` a `http://backend:8080`;
+- devuelve `index.html` para las rutas de la SPA;
+- cachea los archivos estáticos con hash.
+
+## Pantallas
 
 | Ruta | Función | Acceso |
 | --- | --- | --- |
-| `/login` | Iniciar sesión con correo y contraseña. | Público |
-| `/procesos` | Buscar, filtrar y paginar procesos; confirmar su eliminación lógica. | Usuarios autenticados; solo el administrador elimina. |
-| `/usuarios` | Registrar colaboradores, cambiar roles y desactivar cuentas. | Administrador |
-| `/procesos/nuevo` | Crear un proceso con nombre, descripción y categoría. | Administrador y editor |
-| `/procesos/:id/editar` | Cargar y modificar los datos y el estado de un proceso. | Administrador y editor |
+| `/login` | Iniciar sesión | Público |
+| `/registro` | Registrar empresa y su administrador (HU-01) | Público |
+| `/procesos` | Buscar, filtrar y paginar procesos; eliminación con confirmación (HU-06) | Autenticados; elimina el administrador |
+| `/procesos/nuevo`, `/procesos/:id/editar` | Crear y editar procesos (HU-04, HU-05) | Administrador y editor |
+| `/procesos/:id` | Diagrama, historial y compartición (HU-07 a HU-16, HU-21 a HU-28) | Autenticados; modelan administrador y editor |
+| `/compartidos` | Procesos que otras empresas compartieron (HU-23) | Autenticados |
+| `/roles` | Roles de proceso: búsqueda paginada, uso y CRUD (HU-17 a HU-20) | Consulta todos; gestiona el administrador |
+| `/usuarios` | Registrar colaboradores, cambiar rol, desactivar (HU-02, HU-03) | Administrador |
 
-Crear y editar comparten un mismo componente. Al crear, la API asigna el estado `BORRADOR`. Los procesos inactivos se pueden listar, pero no editar.
+Las rutas privadas cuelgan de `LayoutComponent` (barra de navegación) y se cargan de forma diferida (*lazy loading*).
 
-## Explicación sencilla del código
+## Estructura
 
-- `models`: describe los datos que intercambiamos con el servidor.
-- `services`: envía las peticiones HTTP con la cookie de sesión.
-- `guards`: controla qué rutas puede visitar cada rol; el servidor valida los permisos reales.
-- `pages`: contiene la lógica, los formularios y las tablas de cada pantalla.
-- `shared/error-api.ts`: convierte los errores de la API en mensajes legibles.
-- `shared/gestion.css`: comparte el estilo entre los formularios nuevos.
+```
+src/app/
+├── models/        interfaces tipadas de cada recurso de la API (Pagina<T>, ErrorApi, ProcesoDetalle, …)
+├── services/      un servicio HTTP por recurso + api.interceptor
+├── guards/        authGuard (sesión) y rolGuard (rol requerido)
+├── shared/        componentes reutilizables, validadores y traducción de errores
+├── pages/         una carpeta por pantalla
+└── testing/       proveedores y datos de ejemplo para las pruebas
+```
 
-El listado enlaza a usuarios y a crear o editar procesos. Los formularios revisan los campos antes de enviarlos y conservan la información si el servidor devuelve un error. La eliminación de procesos y la desactivación de usuarios requieren confirmación en pantalla.
+### Servicios y RxJS
 
-El rol y la empresa obtenidos en el login se conservan en `sessionStorage` para mantener la navegación al recargar. No se guardan contraseñas. Si ya había una sesión abierta antes de esta actualización, inicia sesión nuevamente para cargar esos datos. No existe un endpoint de consulta de sesión en la API actual.
+- **Servicios por recurso.** Cada recurso tiene su servicio (`ProcesoService`, `ActividadService`, `LaneService`, …). Todos devuelven `Observable` tipados.
+- **`apiInterceptor`.** Es un interceptor funcional:
+  - añade `withCredentials` a todas las peticiones;
+  - ante un 401, limpia la sesión y redirige a `/login?sesion=expirada`.
+- **`AuthService`.** Guarda el usuario en una `signal`.
+  - Al recargar la página, `cargarSesion()` lo consulta en `GET /api/auth/sesion`, así el rol mostrado siempre coincide con el del servidor.
+  - `sessionStorage` solo agiliza el primer pintado. Nunca guarda contraseñas.
+- **Operadores.** Se usan:
+  - `finalize`, para los indicadores de carga;
+  - `map` y `tap`, para adaptar las respuestas y actualizar la sesión;
+  - `catchError` y `throwError`, en el interceptor y en los guards;
+  - `takeUntilDestroyed`, para cancelar suscripciones a cambios de formulario.
 
-Los cambios de rol se aplican en el siguiente inicio de sesión del colaborador, porque el backend conserva el rol en la sesión. La pantalla evita modificar la propia cuenta administrativa.
+### Componentes e información entre componentes
 
-## Verificación
+**Componentes compartidos** (`shared/components`). Usan `input()` / `output()`:
+
+| Componente | Función |
+| --- | --- |
+| `app-paginador` | Paginación |
+| `app-dialogo-confirmacion` | Confirmación antes de eliminar |
+| `app-aviso` | Mensajes de éxito, error o advertencia |
+
+**Vista del proceso** (`pages/proceso-detalle`). Separa contenedor y presentación:
+
+- `ProcesoDetallePage` (contenedor):
+  - carga el detalle;
+  - coordina la selección;
+  - recarga después de cada cambio.
+- `DiagramaProceso` (presentación):
+  - dibuja el diagrama en SVG;
+  - emite `seleccionar` y `mover` (arrastrar y soltar con *pointer capture*).
+- `diagrama-layout.ts`:
+  - funciones puras de geometría (posiciones de pools, lanes, nodos y arcos);
+  - probadas sin DOM.
+- `diagrama-validacion.ts`: advierte incoherencias del modelo, por ejemplo una actividad sin arcos o un gateway con una sola salida.
+- **Editores.** Hay un editor por tipo de elemento, todos sobre la clase base `EditorBase`:
+  - entradas `detalle` y `soloLectura`;
+  - salidas `guardado` y `cancelado`.
+
+**Parámetros de ruta.** Llegan como `input()` gracias a `withComponentInputBinding()`.
+
+### Formularios y paginación
+
+- Todos los formularios son reactivos y tipados (`NonNullableFormBuilder`).
+- Tienen validadores propios en `shared/validadores.ts`:
+  - `noVacio`: rechaza un texto que solo tiene espacios;
+  - `camposIguales`: exige que la contraseña y su confirmación coincidan.
+- El evento de mensaje usa `FormArray` para sus campos dinámicos.
+- Los errores de validación del backend (`{ mensaje, errores[] }`) se muestran campo por campo.
+- Procesos y roles se paginan en el servidor con `Pagina<T>`.
+
+## Pruebas
 
 ```bash
 npm run build
 npm test -- --watch=false
 ```
 
-Las pruebas usan respuestas HTTP simuladas para comprobar formularios, permisos de navegación, filtros, creación, edición, eliminación y gestión de usuarios. La integración con un servidor real requiere iniciar el backend y entrar con una cuenta de prueba.
+Hay 63 pruebas unitarias (Vitest) en 19 archivos. Usan respuestas HTTP simuladas (`HttpTestingController`) y cubren:
+
+- servicios, interceptor y guards;
+- formularios (crear o editar proceso, registro de empresa, roles, usuarios);
+- paginación y confirmaciones;
+- la geometría y la validación del diagrama;
+- la pantalla de detalle con el proceso de vacaciones del enunciado.

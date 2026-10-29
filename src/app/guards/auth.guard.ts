@@ -1,33 +1,22 @@
-
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { HttpErrorResponse } from '@angular/common/http';
 import { catchError, map, of } from 'rxjs';
 
-import { ProcesoService } from '../services/proceso.service';
+import { AuthService } from '../services/auth.service';
 
+/**
+ * Permite entrar al área privada solo con una sesión válida en el servidor.
+ * Además refresca el rol y la empresa del usuario por si cambiaron.
+ */
 export const authGuard: CanActivateFn = () => {
-
-  const procesoService = inject(ProcesoService);
+  const auth = inject(AuthService);
   const router = inject(Router);
 
-  return procesoService.listar({
-    page: 0,
-    size: 1
-  }).pipe(
-
-    
+  return auth.cargarSesion().pipe(
     map(() => true),
-
-    catchError((error: HttpErrorResponse) => {
-
-      // Usuario sin sesión válida
-      if (error.status === 401 || error.status === 403) {
-        return of(router.createUrlTree(['/login']));
-      }
-
-      console.error('No se pudo verificar la sesion:', error);
-      return of(false);
+    catchError(() => {
+      auth.limpiarSesion();
+      return of(router.createUrlTree(['/login']));
     })
   );
 };

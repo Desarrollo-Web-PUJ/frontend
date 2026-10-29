@@ -1,0 +1,51 @@
+.confirmacion {
+  padding: 18px 20px;
+  margin: 16px 0;
+  background: var(--color-advertencia-suave);
+  border: 1px solid #fed7aa;
+  border-radius: 12px;
+}
+
+.mensaje {
+  margin: 0 0 6px;
+  font-weight: 600;
+  color: var(--color-texto-fuerte);
+}
+
+.detalle {
+  margin: 0 0 6px;
+  color: var(--color-advertencia);
+  line-height: 1.5;
+}
+
+.acciones {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+button {
+  padding: 10px 16px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font: inherit;
+  cursor: pointer;
+}
+
+button.peligro {
+  color: var(--color-peligro);
+  border-color: #fecaca;
+  font-weight: 600;
+}
+
+button.peligro:hover:not(:disabled) {
+  background: var(--color-peligro-suave);
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

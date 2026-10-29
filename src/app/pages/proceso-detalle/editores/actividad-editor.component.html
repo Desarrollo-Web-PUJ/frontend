@@ -1,0 +1,62 @@
+<form class="editor" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+  <h3>{{ actividad() ? 'Actividad: ' + actividad()!.nombre : 'Nueva actividad' }}</h3>
+  <p class="ayuda">
+    La actividad se asigna a una función, no a una persona: la lane elegida define el rol responsable.
+    En el diagrama puedes arrastrarla para cambiar su posición o su lane.
+  </p>
+
+  @if (!gruposLanes().length) {
+    <app-aviso tipo="advertencia" mensajes="Primero crea al menos una lane en el pool de la empresa." />
+  }
+
+  <fieldset [disabled]="guardando() || soloLectura()">
+    <label for="actividad-nombre">Nombre *</label>
+    <input id="actividad-nombre" formControlName="nombre" />
+    @if (form.controls.nombre.touched && form.controls.nombre.invalid) {
+      <small class="error-campo">El nombre es obligatorio y único dentro del proceso.</small>
+    }
+
+    <label for="actividad-tipo">Tipo de actividad</label>
+    <select id="actividad-tipo" formControlName="tipo">
+      @for (tipo of tipos; track tipo[0]) {
+        <option [value]="tipo[0]">{{ tipo[1] }}</option>
+      }
+    </select>
+
+    <label for="actividad-lane">Lane responsable *</label>
+    <select id="actividad-lane" formControlName="laneId">
+      @for (grupo of gruposLanes(); track grupo.pool.id) {
+        <optgroup [label]="grupo.pool.nombre">
+          @for (lane of grupo.lanes; track lane.id) {
+            <option [ngValue]="lane.id">{{ lane.nombre }}</option>
+          }
+        </optgroup>
+      }
+    </select>
+  </fieldset>
+
+  @if (!soloLectura()) {
+    <div class="acciones">
+      <button class="primario" type="submit" [disabled]="guardando() || !gruposLanes().length">
+        {{ guardando() ? 'Guardando...' : 'Guardar' }}
+      </button>
+      <button type="button" (click)="cancelado.emit()" [disabled]="guardando()">Cerrar</button>
+      @if (actividad() && esAdministrador()) {
+        <button class="peligro" type="button" (click)="confirmandoEliminacion.set(true)" [disabled]="guardando()">Eliminar actividad</button>
+      }
+    </div>
+  }
+
+  @if (confirmandoEliminacion()) {
+    <app-dialogo-confirmacion
+      [mensaje]="'¿Eliminar la actividad ' + actividad()!.nombre + '?'"
+      detalle="También se eliminarán los arcos que entran y salen de ella."
+      textoConfirmar="Eliminar"
+      [ocupado]="guardando()"
+      (confirmar)="eliminar()"
+      (cancelar)="confirmandoEliminacion.set(false)" />
+  }
+  @if (error()) {
+    <app-aviso tipo="error" [mensajes]="error()" />
+  }
+</form>
