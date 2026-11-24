@@ -10,6 +10,7 @@ describe('Usuarios de la empresa', () => {
   let http: HttpTestingController;
   beforeEach(() => {
     sessionStorage.setItem('usuarioActual', JSON.stringify({ usuarioId: 1, empresaId: 2, rol: 'ADMINISTRADOR' }));
+    sessionStorage.setItem('tokenAcceso', 'a.b.c');
     TestBed.configureTestingModule({ imports: [Usuarios], providers: proveedoresPrueba() });
     const fixture = TestBed.createComponent(Usuarios);
     component = fixture.componentInstance;
@@ -30,7 +31,7 @@ describe('Usuarios de la empresa', () => {
     component.registrar();
     const req = http.expectOne('/api/empresas/2/usuarios/registro');
     expect(req.request.method).toBe('POST');
-    expect(req.request.withCredentials).toBe(true);
+    expect(req.request.headers.get('Authorization')).toBe('Bearer a.b.c');
     expect(req.request.body.nombre).toBe('Luis');
     expect(req.request.body.rol).toBe('EDITOR');
     req.flush(colaborador);

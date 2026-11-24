@@ -1,7 +1,7 @@
 # Frontend · Editor y visualizador de procesos
 
 SPA en Angular 22 para registrar empresas, gestionar usuarios y roles, y modelar visualmente procesos de negocio: pools, lanes, actividades, gateways, arcos y mensajes.
-Se comunica con el backend por `/api`, usando la cookie de sesión del servidor.
+Se comunica con el backend por `/api` y se autentica con un token JWT que emite el backend (Spring Security).
 
 ## Ejecutar
 
@@ -53,11 +53,12 @@ src/app/
 
 - **Servicios por recurso.** Cada recurso tiene su servicio (`ProcesoService`, `ActividadService`, `LaneService`, …). Todos devuelven `Observable` tipados.
 - **`apiInterceptor`.** Es un interceptor funcional:
-  - añade `withCredentials` a todas las peticiones;
-  - ante un 401, limpia la sesión y redirige a `/login?sesion=expirada`.
-- **`AuthService`.** Guarda el usuario en una `signal`.
-  - Al recargar la página, `cargarSesion()` lo consulta en `GET /api/auth/sesion`, así el rol mostrado siempre coincide con el del servidor.
-  - `sessionStorage` solo agiliza el primer pintado. Nunca guarda contraseñas.
+  - agrega `Authorization: Bearer <token>` a las peticiones de la API (no al login ni al registro, ni a sitios externos);
+  - ante un 401 (token vencido o inválido), limpia la sesión y redirige a `/login?sesion=expirada`.
+- **`AuthService`.** Inicia sesión con `POST /api/auth/login`, que devuelve el JWT y los datos del usuario, y los guarda en `signal`s.
+  - El token se guarda en `sessionStorage`, que se borra al cerrar la pestaña. Nunca se guardan contraseñas.
+  - Al entrar a una ruta privada, `cargarSesion()` consulta `GET /api/auth/sesion` con el token, así el rol mostrado siempre coincide con el del servidor.
+  - Cerrar sesión descarta el token: la API no guarda estado.
 - **Operadores.** Se usan:
   - `finalize`, para los indicadores de carga;
   - `map` y `tap`, para adaptar las respuestas y actualizar la sesión;

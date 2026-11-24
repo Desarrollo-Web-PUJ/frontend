@@ -4,7 +4,7 @@ import { HttpTestingController } from '@angular/common/http/testing';
 import { Router } from '@angular/router';
 
 import { AuthService } from './auth.service';
-import { iniciarSesionDePrueba, proveedoresPrueba } from '../testing/proveedores-prueba';
+import { TOKEN_DE_PRUEBA, iniciarSesionDePrueba, proveedoresPrueba } from '../testing/proveedores-prueba';
 
 describe('Interceptor de la API', () => {
   let http: HttpTestingController;
@@ -21,9 +21,17 @@ describe('Interceptor de la API', () => {
     sessionStorage.clear();
   });
 
-  it('envía la cookie de sesión en las peticiones a la API', () => {
+  it('envía el JWT en el encabezado Authorization de las peticiones a la API', () => {
     cliente.get('/api/procesos').subscribe();
-    expect(http.expectOne('/api/procesos').request.withCredentials).toBe(true);
+    expect(http.expectOne('/api/procesos').request.headers.get('Authorization')).toBe(`Bearer ${TOKEN_DE_PRUEBA}`);
+  });
+
+  it('no envía el token al iniciar sesión ni a sitios externos', () => {
+    cliente.post('/api/auth/login', {}).subscribe();
+    expect(http.expectOne('/api/auth/login').request.headers.has('Authorization')).toBe(false);
+
+    cliente.get('https://ejemplo.com/datos').subscribe();
+    expect(http.expectOne('https://ejemplo.com/datos').request.headers.has('Authorization')).toBe(false);
   });
 
   it('cierra la sesión local y redirige al login cuando la sesión expira', () => {

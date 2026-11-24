@@ -4,6 +4,8 @@ import { HttpTestingController } from '@angular/common/http/testing';
 import { AuthService } from './auth.service';
 import { proveedoresPrueba } from '../testing/proveedores-prueba';
 
+const USUARIO = { usuarioId: 1, empresaId: 2, nombre: 'Ana', correo: 'admin@empresa.com', rol: 'ADMINISTRADOR' };
+
 describe('AuthService', () => {
   beforeEach(() => {
     sessionStorage.clear();
@@ -14,14 +16,17 @@ describe('AuthService', () => {
     sessionStorage.clear();
   });
 
-  it('conserva empresa y rol al entrar y los elimina al cerrar sesión', () => {
+  it('guarda el JWT, la empresa y el rol al entrar y los elimina al cerrar sesión', () => {
     const auth = TestBed.inject(AuthService);
     const http = TestBed.inject(HttpTestingController);
 
     auth.login({ correo: 'admin@empresa.com', password: 'password123' }).subscribe();
     const req = http.expectOne('/api/auth/login');
-    expect(req.request.withCredentials).toBe(true);
-    req.flush({ usuarioId: 1, empresaId: 2, nombre: 'Ana', correo: 'admin@empresa.com', rol: 'ADMINISTRADOR' });
+    expect(req.request.headers.has('Authorization')).toBe(false);
+    req.flush({ token: 'a.b.c', tipo: 'Bearer', expiraEnSegundos: 3600, usuario: USUARIO });
+
+    expect(auth.token()).toBe('a.b.c');
+    expect(sessionStorage.getItem('tokenAcceso')).toBe('a.b.c');
 
     expect(auth.esAdministrador()).toBe(true);
     expect(auth.puedeEditar()).toBe(true);
@@ -30,7 +35,9 @@ describe('AuthService', () => {
     auth.logout().subscribe();
     http.expectOne('/api/auth/logout').flush(null, { status: 204, statusText: 'No Content' });
     expect(auth.usuario()).toBeNull();
+    expect(auth.token()).toBeNull();
     expect(sessionStorage.getItem('usuarioActual')).toBeNull();
+    expect(sessionStorage.getItem('tokenAcceso')).toBeNull();
   });
 
   it('recupera el rol después de recargar la página', () => {

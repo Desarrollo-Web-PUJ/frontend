@@ -23,7 +23,6 @@ describe('ProcesoService', () => {
     expect(req.request.params.get('estado')).toBe('BORRADOR');
     expect(req.request.params.get('incluirInactivos')).toBe('true');
     expect(req.request.params.get('page')).toBe('2');
-    expect(req.request.withCredentials).toBe(true);
     req.flush({ content: [] });
   });
 
@@ -40,7 +39,6 @@ describe('ProcesoService', () => {
     servicio.eliminar(7).subscribe();
     const req = http.expectOne('/api/procesos/7?confirmar=true');
     expect(req.request.method).toBe('DELETE');
-    expect(req.request.withCredentials).toBe(true);
     req.flush(null);
   });
 

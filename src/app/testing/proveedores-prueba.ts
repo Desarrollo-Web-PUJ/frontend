@@ -15,8 +15,12 @@ export function proveedoresPrueba(): (Provider | EnvironmentProviders)[] {
   ];
 }
 
-/** Simula un usuario autenticado guardado en la sesión del navegador. */
+/** Token con forma de JWT que usan las pruebas. */
+export const TOKEN_DE_PRUEBA = 'encabezado.contenido.firma';
+
+/** Simula un usuario autenticado (token y datos) guardado en la sesión del navegador. */
 export function iniciarSesionDePrueba(usuario: Partial<LoginResponse> = {}): void {
+  sessionStorage.setItem('tokenAcceso', TOKEN_DE_PRUEBA);
   sessionStorage.setItem('usuarioActual', JSON.stringify({
     usuarioId: 1,
     empresaId: 2,

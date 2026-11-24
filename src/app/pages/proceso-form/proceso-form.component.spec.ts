@@ -34,7 +34,6 @@ describe('Formulario de proceso', () => {
     const req = http.expectOne('/api/procesos');
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({ nombre: 'Compras', categoria: 'Ventas', descripcion: 'Descripción' });
-    expect(req.request.withCredentials).toBe(true);
     req.flush({ id: 1 });
     expect(navegar).toHaveBeenCalledWith(['/procesos'], { state: { mensaje: 'Proceso creado correctamente.' } });
   });
