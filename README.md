@@ -22,6 +22,18 @@ Abra http://localhost:4200. El proxy reenvía `/api` al backend, igual que nginx
 - devuelve `index.html` para las rutas de la SPA;
 - cachea los archivos estáticos con hash.
 
+## CI/CD con GitHub Actions
+
+`.github/workflows/ci-cd.yml` corre en cada push y pull request a `main`:
+
+| Etapa | Dónde corre | Qué hace |
+| --- | --- | --- |
+| `pruebas` | GitHub (Ubuntu) | `npm ci`, pruebas unitarias (Vitest) y compilación de producción. |
+| `imagen` | GitHub (Ubuntu) | Construye la imagen Docker (Angular + nginx). |
+| `despliegue` | Runner propio (`self-hosted`) | Actualiza el contenedor del frontend con el `docker-compose.yml` del backend. |
+
+El despliegue se activa con la variable `DESPLIEGUE_HABILITADO = true` y los secretos `DB_PASSWORD` y `JWT_SECRET` (ver el README del backend).
+
 ## Pantallas
 
 | Ruta | Función | Acceso |
