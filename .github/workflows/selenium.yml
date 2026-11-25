@@ -1,0 +1,56 @@
+name: Selenium E2E
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  selenium:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      DB_PASSWORD: local-e2e-postgres
+      JWT_SECRET: solo-para-el-entorno-efimero-de-pruebas-e2e
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: frontend
+      - uses: actions/checkout@v4
+        with:
+          repository: Desarrollo-Web-PUJ/backend-jwt
+          ref: d4a826c049f7c358baa7d7799ca7c0f4a2cf9942
+          path: backend-jwt
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verificar Chrome del runner
+        run: |
+          google-chrome --version
+          "$CHROMEWEBDRIVER/chromedriver" --version
+          google-chrome --headless --disable-dev-shm-usage --dump-dom about:blank
+          echo "E2E_CHROME=$(command -v google-chrome)" >> "$GITHUB_ENV"
+          echo "E2E_DRIVER=$CHROMEWEBDRIVER/chromedriver" >> "$GITHUB_ENV"
+      - run: python -m pip install -r frontend/e2e/requirements.txt
+      - name: Arrancar PostgreSQL, Spring Boot y Angular
+        working-directory: backend-jwt
+        run: |
+          docker compose up --build -d frontend
+          curl --fail --silent --show-error --retry 45 --retry-all-errors --retry-delay 2 http://localhost:8080/v3/api-docs -o /dev/null
+          curl --fail --silent --show-error http://localhost:4200/login -o /dev/null
+      - name: Ejecutar Selenium
+        working-directory: frontend
+        run: python -m pytest -q e2e --junitxml=e2e/evidencias/junit.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: evidencias-selenium
+          path: frontend/e2e/evidencias/
+      - name: Cerrar el entorno temporal
+        if: always()
+        working-directory: backend-jwt
+        run: docker compose down -v
