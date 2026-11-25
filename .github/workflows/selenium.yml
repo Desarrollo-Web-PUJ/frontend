@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   selenium:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     env:
       DB_PASSWORD: local-e2e-postgres
@@ -28,11 +28,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - uses: browser-actions/setup-chrome@v2
-        id: chrome
-        with:
-          chrome-version: stable
-          install-chromedriver: true
+      - name: Verificar Chrome del runner
+        run: |
+          google-chrome --version
+          "$CHROMEWEBDRIVER/chromedriver" --version
+          google-chrome --headless --disable-dev-shm-usage --dump-dom about:blank
+          echo "E2E_CHROME=$(command -v google-chrome)" >> "$GITHUB_ENV"
+          echo "E2E_DRIVER=$CHROMEWEBDRIVER/chromedriver" >> "$GITHUB_ENV"
       - run: python -m pip install -r frontend/e2e/requirements.txt
       - name: Arrancar PostgreSQL, Spring Boot y Angular
         working-directory: backend-jwt
@@ -42,9 +44,6 @@ jobs:
           curl --fail --silent --show-error http://localhost:4200/login -o /dev/null
       - name: Ejecutar Selenium
         working-directory: frontend
-        env:
-          E2E_CHROME: ${{ steps.chrome.outputs.chrome-path }}
-          E2E_DRIVER: ${{ steps.chrome.outputs.chromedriver-path }}
         run: python -m pytest -q e2e --junitxml=e2e/evidencias/junit.xml
       - uses: actions/upload-artifact@v4
         if: always()
