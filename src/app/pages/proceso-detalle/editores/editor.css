@@ -29,6 +29,14 @@ label {
   margin: 14px 0 6px;
 }
 
+legend.titulo-grupo {
+  display: block;
+  padding: 0;
+  font-weight: 600;
+  font-size: 14px;
+  margin: 14px 0 6px;
+}
+
 label.en-linea {
   display: flex;
   align-items: center;

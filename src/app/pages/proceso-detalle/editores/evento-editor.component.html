@@ -72,17 +72,19 @@
         </select>
 
         @if (actividades().length) {
-          <label>Actividades que usan los datos recibidos</label>
-          <div class="lista-opciones">
-            @for (actividad of actividades(); track actividad.id) {
-              <label class="en-linea">
-                <input type="checkbox"
-                       [checked]="consumeActividad(actividad.id)"
-                       (change)="alternarActividad(actividad.id, $any($event.target).checked)" />
-                {{ actividad.nombre }}
-              </label>
-            }
-          </div>
+          <fieldset>
+            <legend class="titulo-grupo">Actividades que usan los datos recibidos</legend>
+            <div class="lista-opciones">
+              @for (actividad of actividades(); track actividad.id) {
+                <label class="en-linea">
+                  <input type="checkbox"
+                         [checked]="consumeActividad(actividad.id)"
+                         (change)="alternarActividad(actividad.id, $any($event.target).checked)" />
+                  {{ actividad.nombre }}
+                </label>
+              }
+            </div>
+          </fieldset>
         }
       </div>
     }
